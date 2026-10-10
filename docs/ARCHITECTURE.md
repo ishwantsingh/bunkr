@@ -89,3 +89,7 @@ progress currently lives in memory and does not survive a page reload.
 See [implementation phases](../IMPLEMENTATION_PHASES.md),
 [UI behavior and limits](UI_MOCK.md), and
 [Meshtastic integration boundary](MESHTASTIC.md) for the detailed contracts.
+
+### Integrated network workspace
+
+The middle panel adapts `mesh-ui` from `mesh-simulation` while preserving both phone screens. Its draggable nodes, range/availability editors and radio/loss controls operate on the same simulator that relays native image, text and voice packets. Packet inspection, hop traces, chunk progress and sender/receiver knowledge observe those transfers. Next-event stepping, seeded reset and approximate current-transfer estimates are implemented; estimates are not calibrated to firmware or physical radios.

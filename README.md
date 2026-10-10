@@ -116,3 +116,5 @@ The current prototype covers **text, voice notes, photos, previews, and requeste
 - [VISTA-LoRa: research on selective visual transmission over LoRa](https://ieeexplore.ieee.org/abstract/document/11513963)
 
 These projects establish related work. imageoverbt's proposed focus is the interaction between recipient-selected image detail, transmission priority, and explicit delivery evidence.
+
+The integrated middle panel now includes the `mesh-simulation` branch’s draggable map, per-node position/range/online controls, radio presets, loss, replay speed, single-event stepping, seed/reset, packet inspection, native chunk progress, timeline and approximate transfer estimates. See [demo controls](docs/UI_MOCK.md).

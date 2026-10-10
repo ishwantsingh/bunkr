@@ -56,10 +56,10 @@ function eventDescription(event) {
     case "hop_lost": return ["Hop lost", `${shortId}: ${event.from} → ${event.to}`];
     case "packet_received": return ["Packet arrived", `${shortId} reached ${event.at}`];
     case "retry_queued": return ["Retry queued", `${event.packetId}, attempt ${event.attempt}`];
-    case "missing_requested": return ["Missing requested", `${event.missing.length} chunks requested by D`];
+    case "missing_requested": return ["Missing requested", `${event.missing.length} chunks requested`];
     case "request_received": return ["Crop request arrived", "A can now send the detailed crop"];
-    case "representation_verified": return ["Image verified", `${event.kind} completed at D`];
-    case "receipt_confirmed": return ["Receipt confirmed", "A received D’s confirmation"];
+    case "representation_verified": return ["Media verified", `${event.kind} completed at ${event.at}`];
+    case "receipt_confirmed": return ["Receipt confirmed", `${event.at} received the recipient’s confirmation`];
     case "route_changed": return ["Route changed", event.route?.join(" → ") ?? "No route available"];
     case "waiting_for_route": return ["Waiting for route", "Packets keep their progress until a route returns"];
     case "status_requested": return ["Status query", "A asks D for a receipt"];
@@ -152,13 +152,16 @@ function renderRoute(state) {
 }
 
 function renderStages(){
-  const group=mediaProgress(hooks.network());
-  const pending=hooks.network().pending;
-  const stage=group.confirmed?3:group.verified?3:group.kind==='crop'?2:pending&&[...hooks.network().frames.values()].some(f=>f.tag===2)?1:group.total?0:-1;
+  const n=hooks.network(),group=mediaProgress(n);
+  const requesting=[...n.frames.values()].some(f=>f.tag===2)&&hooks.busy();
+  const message=['text','voice'].includes(group.kind);
+  const stage=requesting?1:message?(group.verified?3:0):group.kind==='crop'?(group.verified?3:2):group.kind==='preview'?(group.confirmed?1:0):-1;
   root.querySelectorAll('.flow-step').forEach((el,i)=>{
-    el.classList.toggle('is-active',i===stage&&!group.confirmed);
-    el.classList.toggle('is-complete',i<stage||group.confirmed);
-    if(i===stage)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');
+    if(i===0)el.querySelector('strong').textContent=message?(group.kind==='voice'?'Voice note':'Text message'):'Tiny preview';
+    const complete=message?(i===0&&group.verified||i===3&&group.confirmed):group.kind==='crop'?(i<stage||group.confirmed):group.kind==='preview'?i===0&&group.confirmed:false;
+    el.classList.toggle('is-active',i===stage&&!complete);
+    el.classList.toggle('is-complete',complete);
+    if(i===stage&&!complete)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');
   });
 }
 
@@ -247,6 +250,7 @@ function renderControls(state){
   else if(state.activeTx){const p=state.activeTx.packet;movement=`${p.type==='data'?`Chunk ${p.chunkIndex+1}`:p.type.replaceAll('_',' ')} · ${state.activeTx.from} to ${state.activeTx.to}`;status='On air';}
   else if(group.failed){movement='Recovery limit reached · retry from phone';status='Failed';}
   else if(n.pending){movement='Waiting for next packet or recovery timeout';status='Queued';}
+  else if(hooks.busy()){movement='Preparing the next transfer';status='Processing';}
   else if(group.confirmed){movement='Verified receipt returned to sender';status='Delivered';}
   else if(group.total){movement=group.verified?'Receiver verified · awaiting receipt':'Waiting for local verification';status='Unconfirmed';}
   $('currentMovement').textContent=movement;$('movementStatus').textContent=status;
@@ -285,11 +289,11 @@ $('lossRange').addEventListener('input',e=>{hooks.network().loss=Number(e.target
 $('replaySelect').addEventListener('change',e=>hooks.setSpeed(Number(e.target.value)));
 $('resetButton').addEventListener('click',()=>hooks.reset());
 $('nodeSelect').addEventListener('change',e=>{selectedNode=e.target.value;render();});
-for(const [id,key] of [['nodeX','x'],['nodeY','y'],['nodeRange','range']])$(id).addEventListener('change',e=>{
-  const change=nodeChange(key,e.target.value);if(change){e.target.value=change[key];hooks.network().setNode(selectedNode,change);render();}
+for(const [id,key] of [['nodeX','x'],['nodeY','y'],['nodeRange','range']])$(id).addEventListener('input',e=>{
+  const change=e.target.value===''?null:nodeChange(key,e.target.value);if(change){hooks.network().setNode(selectedNode,change);render();}
 });
 $('nodeOnline').addEventListener('change',e=>{hooks.network().setNode(selectedNode,{online:e.target.checked});render();});
-svg.addEventListener('pointerdown',e=>{const group=e.target.closest('[data-node-id]');if(!group)return;e.preventDefault();selectedNode=group.dataset.nodeId;draggingNode=selectedNode;svg.setPointerCapture(e.pointerId);render();});
+svg.addEventListener('pointerdown',e=>{const group=e.target.closest('[data-node-id]');if(!group)return;e.preventDefault();selectedNode=group.dataset.nodeId;draggingNode=selectedNode;group.focus();svg.setPointerCapture(e.pointerId);render();});
 svg.addEventListener('pointermove',e=>{if(!draggingNode)return;const point=new DOMPoint(e.clientX,e.clientY).matrixTransform(svg.getScreenCTM().inverse());hooks.network().setNode(draggingNode,{...nodeChange('x',point.x),...nodeChange('y',point.y)});render();});
 for(const name of ['pointerup','pointercancel','lostpointercapture'])svg.addEventListener(name,()=>draggingNode=null);
 svg.addEventListener('keydown',e=>{const group=e.target.closest('[data-node-id]');if(!group)return;selectedNode=group.dataset.nodeId;

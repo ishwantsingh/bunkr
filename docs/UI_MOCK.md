@@ -57,12 +57,14 @@ application ACK crosses the mesh back to the sender and is validated by the API.
 
 The map observes the shared `mesh-simulation` engine's actual packet events:
 
-- Default route: A → B → C → D. **Take C offline** reroutes through B → E → D.
-- Click relay nodes to toggle them. Removing B isolates A; restoring it resumes.
-- Choose a relay and change its range: links require mutual range and both nodes online.
+- Default route: A → B → C → D. **Disable relay C** reroutes through B → E → D.
+- Drag any node on the map; arrow keys move a focused node by 10 map units. Select a node to edit coordinates, mutual range and online state. Removing B isolates A; restoring it resumes.
+- The middle panel adapts the full `mesh-ui` workspace from `mesh-simulation`: movable nodes and range rings, actual packet inspector and hop trace, received/missing chunk grid, separate sender/receiver knowledge, timeline and controls. Both phone screens retain their messaging and photo-import flows.
 - Radio presets change modeled transmission time. Loss applies independently per hop (0–100%).
 - Disconnect/pause preserves received chunks and freezes progress. No arrival promise is made without a route.
-- Replay speed cycles 40× / 80× / 160×. It changes playback of simulated time, not the radio rate or measured byte counts.
+- Replay speed offers 40× / 80× / 160×. It changes playback of simulated time, not the radio rate or measured byte counts.
+- **Next event** pauses autoplay and advances exactly one engine event. Change the scenario seed and **Reset simulation** to replay a reproducible run. Reset also clears phone transfers and retains the selected photo.
+- Remaining time is an approximate range for the current transfer using queued bytes, remaining hops, radio rate and expected loss retries; it excludes future requests and local codec work. Pause, disconnection or an unavailable route is explicit.
 - Timeline times are simulated elapsed time. Counters include every hop, retry and control packet.
 
 ## Engine and packet integration
@@ -115,5 +117,6 @@ node --test tests/ui/*.test.mjs mesh-ui/simulator.test.mjs
 
 Checks cover native image/text/voice reconstruction over 20% per-hop loss,
 reverse requests/receipts, missing-chunk recovery, bounded failure, interrupted
-routes, range changes, preset timing and byte accounting, plus the original
+routes, range changes, preset timing and byte accounting, paused single-event stepping,
+inspector verification/receipt gates and rate/loss-aware estimates, plus the original
 standalone engine scenarios. CI runs both suites.
