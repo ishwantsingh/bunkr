@@ -107,12 +107,10 @@ function markerAt(marker, x, y) {
 
 function renderRoute(state) {
   const active = state.activeTx;
-  const lastRouteValid = lastPacket?.route?.every((id, index, route) => index === 0 || state.connections.some(([a, b]) =>
-    (a === route[index - 1] && b === id) || (b === route[index - 1] && a === id)));
-  const direction = active ? findRoute(state.nodes, active.from, active.packet.destination) : lastRouteValid ? lastPacket.route : state.route;
+  const direction = active ? findRoute(state.nodes, active.from, active.packet.destination) : state.route;
   const path = direction?.map((id) => state.nodes.find((node) => node.id === id));
   $("activeRoute").setAttribute("d", path?.length > 1 ? `M${path.map((node) => `${node.x} ${node.y}`).join(" ")}` : "");
-  $("routeLabel").textContent = path ? `${active ? "Active" : lastRouteValid ? "Last packet" : "Active"} route · ${direction.join(" → ")}` : "No route · arrival time unknown";
+  $("routeLabel").textContent = path ? `${active ? "Packet's next hops" : "Current A → D route"} · ${direction.join(" → ")}` : "No route · arrival time unknown";
   $("networkState").textContent = state.route ? (state.route.includes("E") ? "Rerouted via E" : "Route available") : "Waiting for route";
   document.querySelector(".network-state").classList.toggle("is-rerouted", !state.route || state.route.includes("E"));
 
