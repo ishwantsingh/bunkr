@@ -103,3 +103,11 @@ export function validateVoiceHeader(bytes) {
   const prefix=new TextDecoder('latin1').decode(bytes.subarray(0,128)),head=prefix.indexOf('OpusHead');
   if(prefix.slice(0,4)!=='OggS'||head<0||bytes.length<head+19||bytes[head+9]!==1)throw Error('Expected mono Ogg Opus voice note');
 }
+
+export function makeMissing(id,indices) {
+  if(!indices.length||indices.length>49||indices.some(i=>!Number.isInteger(i)||i<0||i>=Math.ceil(12*1024*1024/174)))throw Error('Invalid missing chunk indices');
+  const identifier=fromHex(id);if(identifier.length!==16)throw Error('Invalid representation ID');
+  const b=new Uint8Array(22+indices.length*4),v=new DataView(b.buffer);
+  b.set([VERSION,6]);b.set(identifier,2);indices.forEach((n,i)=>v.setUint32(18+i*4,n));
+  v.setUint32(b.length-4,crc32(b.subarray(0,-4)));return toHex(b);
+}

@@ -9,10 +9,11 @@ and locally tested; it does not imply deployment or physical-radio validation.
 
 **Start at the sender on the left; finish at the recipient on the right.**
 Text and voice now use the same packet/verification pipeline; see [TEXT_VOICE.md](TEXT_VOICE.md).
-Green boxes are built. Amber boxes mark mock boundaries. Blue boxes show
-what will replace those boundaries; these integrations remain unfinished.
+Green boxes are built, including the imported software mesh. Amber marks the
+shared demo endpoint boundary. Blue boxes show the unfinished firmware and
+independent endpoint path.
 
-![Left-to-right architecture with mock transport and its replacement](assets/architecture.png)
+![Left-to-right architecture with integrated software mesh and unfinished firmware path](assets/architecture.png)
 
 [Editable Mermaid source](assets/architecture.mmd) · Regenerate the image with
 `python scripts/render_architecture.py` (requires Pillow).
@@ -30,7 +31,7 @@ detail tiles. Receipt confirmation waits for the verified completion ACK to retu
 | --- | --- | --- |
 | Both phone UIs share one browser and local API | Separate sender and receiver endpoints; transport delivers requests and ACKs | Chat/crop interaction, media engine, wire contract and verification |
 | Browser receive state is in memory; server database is temporary | Durable storage per endpoint, with restart recovery connected to the transport | Existing SQLite media storage and recovery logic |
-| Map is driven by synthetic browser events | Map observes events from the integrated firmware simulator | Map presentation and controls where applicable |
+| Shared software radio model | Firmware-backed transport events and richer channel modeling | Map, media contract, verification and controls |
 
 The demo wraps frames using official protobufs when the optional Meshtastic
 SDK dependency is installed. It does **not** currently send them through the
@@ -45,24 +46,24 @@ connected over BLE/serial are a later option, outside the initial scope.
 | Area | Status | What we have / what remains |
 | --- | --- | --- |
 | Phase 1: media handling | **Built** | Original retention, EXIF orientation, JPEG/WebP encoding, preview/crop/full-image representations, binary packets, integrity checks, cache reuse and restart-safe Python reconstruction. |
-| Text and voice | **Built over mock transport** | Bidirectional UTF-8/zlib text and mono Opus voice, record/import/sample controls, playback after verification, and matching receipt ACKs. Video remains unimplemented. |
+| Text and voice | **Built over integrated software mesh** | Bidirectional UTF-8/zlib text and mono Opus voice, record/import/sample controls, playback after verification, and matching receipt ACKs. Video remains unimplemented. |
 | Two-phone interaction | **Built as a local UI** | Send a preview, drag/resize a crop, request that section, progressively reveal six independently verified source tiles, and confirm receipt after the ACK returns. |
-| Network visualization | **Working mock** | Five nodes, per-hop seeded loss, bounded end-to-end retries, relay removal, alternate routes, pause and disconnection. Animation time is illustrative. |
+| Network visualization | **Integrated** | Five range-aware nodes, seeded per-hop loss, bounded hop/application recovery, priority queue, radio presets, alternate routes, pause and disconnection. Byte and time metrics come from the engine. |
 | Meshtastic reuse | **Adapter built; integration pending** | Official SDK/protobufs and a send/receive bridge are tested offline. Connected endpoints, firmware nodes and transport dispatch are not wired together. |
-| Phase 2: transport and radio model | **Not built** | Production queueing, packet-boundary priority, fairness, backpressure, retry/expiry policy, radio range/presets, airtime, contention, duty-cycle behavior and erasure-correction evaluation. |
-| Phase 3: production application | **Partial** | The interaction is implemented in the browser mock. Separate device sessions, durable browser receive state, photo-import UI and the full-image request UI remain unfinished. The media engine already supports full-image representations. |
-| Performance and acceptance evidence | **Partial** | Codec/packet measurements and automated local checks exist. Firmware-backed five-node acceptance, airtime accounting, request round-trip measurements and crop-versus-full-image benchmarks remain outstanding. |
+| Phase 2: transport and radio model | **Partial** | Range, presets, approximate airtime, packet-boundary priority and bounded recovery are built. Firmware integration, fairness, backpressure, expiry, contention, duty-cycle behavior and erasure correction remain unfinished. |
+| Phase 3: production application | **Partial** | The interaction is implemented in the local software demo. Separate device sessions, durable browser receive state, photo-import UI and the full-image request UI remain unfinished. The media engine already supports full-image representations. |
+| Performance and acceptance evidence | **Partial** | Codec/packet measurements and automated local checks exist. Firmware-backed acceptance, physical airtime validation, request round-trip benchmarks and crop-versus-full-image benchmarks remain outstanding. |
 | Physical radios / native mobile apps | **Outside initial scope** | No physical LoRa/BLE field validation or native iOS/Android app has been built. |
 
 ## How a section becomes sharp today
 
 1. The sender retains the original; the server encodes a tiny preview.
-2. Actual preview packets cross the browser's mock mesh. The browser reconstructs
+2. Actual preview packets cross the shared software mesh. The browser reconstructs
    and verifies them before displaying the preview.
 3. The recipient selects a box and clicks **Request section**. The request crosses
-   the reverse mock route before the server creates detail.
+   the reverse mesh route before the server creates detail.
 4. The server crops the original into six independently encoded tiles. Their
-   actual packets cross the mock mesh, and each verified tile appears in place.
+   actual packets cross the software mesh, and each verified tile appears in place.
 5. Completion ACKs travel back. The sender shows confirmed receipt only after
    the server receives and validates those ACKs.
 
@@ -75,7 +76,7 @@ progress currently lives in memory and does not survive a page reload.
 | Component | Implementation |
 | --- | --- |
 | Phone UI and interaction | [app.mjs](../imageoverbt/ui/app.mjs), [index.html](../imageoverbt/ui/index.html), [style.css](../imageoverbt/ui/style.css) |
-| Mock network | [network.mjs](../imageoverbt/ui/network.mjs) |
+| Shared mesh and native contract adapter | [simulator.mjs](../imageoverbt/ui/mesh/simulator.mjs), [network.mjs](../imageoverbt/ui/network.mjs) |
 | Browser packet receiver | [protocol.mjs](../imageoverbt/ui/protocol.mjs) |
 | Local API | [ui_server.py](../imageoverbt/ui_server.py) |
 | Image processing and SQLite state | [media.py](../imageoverbt/media.py) |

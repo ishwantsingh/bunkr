@@ -10,10 +10,11 @@ integrate the app. These are delivery phases, not three serial work periods.
 
 The current implementation is software only and now covers images, text and voice
 notes. The text/voice extension includes formats, compression, display/playback and
-packet/ACK integration with the existing browser mock transport. See
+packet/ACK integration with the shared engine imported from `mesh-simulation`. See
 [TEXT_VOICE.md](docs/TEXT_VOICE.md). Video, cloud services, generative image
-reconstruction and physical radio integration remain outside this scope. Realistic
-mesh simulation and independent persistent endpoints remain unfinished.
+reconstruction and physical radio integration remain outside this scope. The five-node software model now supplies mutual range links, routing, per-hop loss,
+priority queueing and preset-based timing. Full firmware simulation and independent
+persistent endpoints remain unfinished.
 
 | Phase | Owner | Proposed branch | Demo result |
 |---|---|---|---|
@@ -131,7 +132,7 @@ fabricated countdown or success event.
 
 **Branch:** `app-interface`
 
-**Mock status:** The requested three-panel interactive mock is available locally; see [UI_MOCK.md](docs/UI_MOCK.md). It uses real media bytes and verified progressive tiles, with a deliberately simplified visual transport model. The complete Phase 2 transport and Phase 3 integrated acceptance gates remain outstanding.
+**Integration status:** The `mesh-simulation` engine now relays the media contract's actual text, voice, preview and crop frames in the two-phone UI. Reverse requests, selective missing-chunk recovery and verified completion ACKs traverse that same engine. Radio rate, range, losses, retries, bytes and simulated elapsed time are connected to the UI. Full firmware simulation, fairness/backpressure, collision/duty-cycle modeling and independent durable endpoints remain outstanding.
 
 Build an iPhone-style sender and recipient interface alongside the five-node map.
 Person 1 can prepare it against event fixtures during the parallel work.
@@ -200,6 +201,7 @@ Document how to reproduce the demo, interruption cases, and benchmark results.
 4. Integrate the app, run the complete acceptance scenarios and comparison, and
    document the measured results and remaining simulator limitations.
 
-Phase 1 media handling is implemented on `codex/media-handling`. An interactive UI mock is available. The full mesh
-simulator, production app integration, integrated radio scenarios and comparison
-benchmarks remain planned work; the media demo does not claim those gates are complete.
+Phase 1 media handling and the software mesh from `mesh-simulation` are integrated.
+The local UI exercises text, voice, preview-request-crop and verified return receipts.
+Firmware-backed acceptance, independent endpoint persistence, advanced channel
+modeling and comparison benchmarks remain planned work.

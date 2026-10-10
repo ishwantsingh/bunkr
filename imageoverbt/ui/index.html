@@ -18,7 +18,7 @@
 </defs></svg>
 <header class="app-header">
   <a class="brand" href="/" aria-label="imageoverbt home"><span class="brand-mark"><svg><use href="#i-mesh"/></svg></span>imageoverbt<span class="brand-divider"></span><span class="lab-label">OFF-GRID LAB</span></a>
-  <div class="header-right"><span class="mock-label"><span></span>Interactive mock</span><button id="reset" class="quiet-button"><svg><use href="#i-reset"/></svg>Reset demo</button></div>
+  <div class="header-right"><span class="mock-label"><span></span>Software mesh demo</span><button id="reset" class="quiet-button"><svg><use href="#i-reset"/></svg>Reset demo</button></div>
 </header>
 <main>
   <div class="workspace-heading"><div><span class="eyebrow">TEXT · VOICE · RECIPIENT-DIRECTED IMAGES</span><h1>Off-grid messaging</h1></div><div class="walkthrough"><span id="step-one" class="step current"><b>1</b>Send</span><i></i><span id="step-two" class="step"><b>2</b>Select</span><i></i><span id="step-three" class="step"><b>3</b>Sharpen</span></div></div>
@@ -61,10 +61,11 @@
         <div class="map-bottomline"><span id="route-label">A → B → C → D</span><span><i class="legend-line"></i>Active route <i class="legend-dash"></i>Alternate</span></div>
         <div id="map-state" class="map-state" hidden><strong>Waiting for a route</strong><span>Received progress is saved.</span></div>
       </div>
-      <div class="network-metrics"><div class="progress-metric"><span id="progress-label">Ready to send</span><strong id="packet-count">0 <small>/ 0 packets</small></strong><div class="progress-track"><i id="progress-fill"></i></div></div><div><span>Packet loss</span><strong id="loss-metric">20<small>%</small></strong></div><div><span>Route</span><strong id="hop-metric">3 <small>hops</small></strong></div><div><span>Retried</span><strong id="retry-metric">0 <small>packets</small></strong></div></div>
-      <div class="network-controls"><label class="loss-control">Loss <input id="loss" aria-label="Packet loss percentage" type="range" min="0" max="40" step="5" value="20"><span id="loss-value">20%</span></label><div><button id="relay-toggle" class="control-button" aria-pressed="false">Take B offline</button><button id="pause" class="icon-button" aria-label="Pause simulation"><svg><use href="#i-pause"/></svg></button><button id="speed" class="control-button" aria-label="Simulation speed">1×</button></div></div>
+      <div class="network-metrics"><div class="progress-metric"><span id="progress-label">Ready to send</span><strong id="packet-count">0 <small>/ 0 packets</small></strong><div class="progress-track"><i id="progress-fill"></i></div></div><div><span>Packet loss</span><strong id="loss-metric">20<small>%</small></strong></div><div><span>Route</span><strong id="hop-metric">3 <small>hops</small></strong></div><div><span>Hop retries</span><strong id="retry-metric">0 <small>packets</small></strong></div></div>
+      <div class="network-controls"><label class="loss-control">Loss <input id="loss" aria-label="Packet loss percentage" type="range" min="0" max="100" step="5" value="20"><span id="loss-value">20%</span></label><div><button id="relay-toggle" class="control-button" aria-pressed="false">Take C offline</button><button id="pause" class="icon-button" aria-label="Pause simulation"><svg><use href="#i-pause"/></svg></button><button id="speed" class="control-button" aria-label="Replay speed">40×</button></div></div>
+      <div class="radio-controls"><label>Radio <select id="radio-preset" aria-label="Radio preset"></select></label><label>Relay <select id="range-node" aria-label="Relay range node"><option>B</option><option selected>C</option><option>E</option></select></label><label class="range-control">Range <input id="radio-range" aria-label="Radio range in map units" type="range" min="80" max="500" step="10" value="240"><span id="range-value">240</span></label></div><div id="mesh-accounting" class="mesh-accounting" aria-live="off">0 radio B · 0s modeled airtime</div>
       <div class="timeline"><div class="timeline-heading"><h3>Packet activity</h3><span id="activity-label"><i></i>Live view</span></div><ol id="events" aria-label="Recent network events"></ol><div class="timeline-empty" id="timeline-empty">Your photo’s journey will appear here.</div></div>
-      <div class="network-footer"><span id="protocol-label">Loading media pipeline…</span><span>Accelerated visual simulation</span></div>
+      <div class="network-footer"><span id="protocol-label">Loading media pipeline…</span><span>Mesh engine · accelerated replay</span></div>
     </section>
 
     <section class="phone-column receiver-column" aria-label="User 2 recipient phone">
