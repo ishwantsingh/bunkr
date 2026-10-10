@@ -143,3 +143,11 @@ completion ACK scenarios against the simulator. Record upstream firmware and
 simulator commit IDs, radio presets and scenario seeds in those results. The
 adapter establishes the shared packet boundary; it does not substitute for those
 acceptance tests.
+
+## Integrated software mesh
+
+The engine imported from `mesh-simulation` now relays actual text, voice and image
+frames in the two-phone UI. It estimates preset-based timing and uses mutual range
+links, per-hop loss and a shared priority queue. This model is project code, not
+Meshtastic firmware or Meshtasticator. The official SDK adapter remains offline
+tested; firmware/SDK endpoint integration is still pending. See [model limits](UI_MOCK.md).

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f8f7" />
+    <title>Mesh Network Simulator</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./simulator.css" />
+    <script src="./app.mjs" type="module"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand" aria-label="Mesh simulator">
+          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div>
+            <div class="brand-name">Meshline</div>
+            <div class="brand-caption">OFF-GRID IMAGE DELIVERY</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <span class="mock-badge"><span class="mock-dot"></span> Live simulation</span>
+          <span class="topbar-divider"></span>
+          <span class="topbar-label">Middle network panel</span>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">THE PACKET JOURNEY</p>
+            <h1>See every hop.</h1>
+            <p class="intro">A clear view of what the mesh knows: which chunk is moving, what was lost, and what reaches the other phone.</p>
+          </div>
+          <div class="scenario-label"><span class="scenario-icon" aria-hidden="true">✦</span><div><strong>Trail sign scenario</strong><small>Sender A · Receiver D</small></div></div>
+        </div>
+
+        <section class="flow-strip" aria-label="Image transfer stages">
+          <div class="flow-step" data-scene="preview"><span class="flow-number">01</span><span><strong>Tiny preview</strong><small>A sends the first image</small></span></div>
+          <span class="flow-connector" aria-hidden="true"></span>
+          <div class="flow-step" data-scene="request"><span class="flow-number">02</span><span><strong>Detail request</strong><small>D asks for the sign</small></span></div>
+          <span class="flow-connector" aria-hidden="true"></span>
+          <div class="flow-step" data-scene="detail"><span class="flow-number">03</span><span><strong>Crop in transit</strong><small>Missing chunks retried</small></span></div>
+          <span class="flow-connector" aria-hidden="true"></span>
+          <div class="flow-step" data-scene="receipt"><span class="flow-number">04</span><span><strong>Receipt</strong><small>D confirms the crop</small></span></div>
+        </section>
+
+        <div class="content-grid">
+          <section class="network-card" aria-labelledby="network-heading">
+            <div class="card-heading">
+              <div><p class="section-kicker">LIVE NETWORK VIEW</p><h2 id="network-heading">Five radios, one message</h2></div>
+              <div class="network-state"><span class="online-dot"></span><span id="networkState">Route available</span></div>
+            </div>
+
+            <div class="map-frame">
+              <div class="map-topline"><span class="view-pill">SIMULATOR VIEW</span><span id="routeLabel">Active route · A → B → C → D</span></div>
+              <svg id="networkMap" viewBox="0 0 800 435" role="img" aria-label="Five movable radio nodes. Links and active packet routes are calculated from their positions and ranges.">
+                <defs>
+                  <pattern id="mapDots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="#d7e5e1" opacity=".7" /></pattern>
+                  <linearGradient id="mapWash" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#edf5f1" /><stop offset="1" stop-color="#f9fbf8" /></linearGradient>
+                  <filter id="nodeShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#275472" flood-opacity=".13" /></filter>
+                  <filter id="packetGlow" x="-100%" y="-100%" width="300%" height="300%"><feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#3478eb" flood-opacity=".5" /></filter>
+                </defs>
+                <rect width="800" height="435" fill="url(#mapWash)" />
+                <rect width="800" height="435" fill="url(#mapDots)" opacity=".58" />
+                <g class="contours" fill="none" stroke="#d4e5dc" stroke-width="1.3" opacity=".62">
+                  <path d="M-45 90C75 12 159 62 211 12c65-62 149 16 222-25 81-45 139 17 213 10 81-8 120-32 193-8" />
+                  <path d="M-44 124C88 43 151 108 226 49c72-57 124 33 214-1 75-28 147 11 212 8 79-4 117-30 193-13" />
+                  <path d="M-51 278c95-73 200-68 271-4 82 75 155-16 245 44 71 48 159 3 214 48 44 37 111 18 160 39" />
+                  <path d="M-39 313c93-66 183-56 249 4 89 82 167-9 249 48 72 49 148 4 206 48 55 41 122 22 175 44" />
+                  <path d="M78 438c14-90 61-146 141-145 81 1 93 47 155 65 53 15 99-6 126-45" />
+                </g>
+                <circle id="rangeRing" class="range-ring" cx="119" cy="220" r="240" />
+                <g id="reachLinks" class="reach-links" fill="none" stroke="#afc4cc" stroke-width="2" stroke-dasharray="5 8" stroke-linecap="round"></g>
+                <path id="activeRoute" class="active-route" d="" fill="none" stroke="#3776e9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+                <g id="lostMarker" class="hidden-marker" aria-label="Last lost hop"><circle r="13" fill="#fff3ef" /><circle r="8" fill="#ef806b" /><path d="M-3-3 3 3M3-3-3 3" stroke="white" stroke-width="1.6" stroke-linecap="round" /></g>
+                <g id="packetMarker" class="hidden-marker" filter="url(#packetGlow)" aria-label="Current packet"><circle r="16" fill="#dceaff" opacity=".95" /><circle r="9" fill="#3776e9" /><circle r="3" fill="white" /></g>
+                <g class="node node-main" data-node-id="A" transform="translate(119 220)" filter="url(#nodeShadow)"><circle r="30" /><text dy="7">A</text></g>
+                <g class="node-label" data-label-id="A" transform="translate(119 270)"><rect x="-34" y="-13" width="68" height="27" rx="13" /><text dy="5">SENDER</text></g>
+                <g class="node" data-node-id="B" transform="translate(303 105)" filter="url(#nodeShadow)"><circle r="27" /><text dy="7">B</text></g>
+                <g class="node" data-node-id="C" transform="translate(509 153)" filter="url(#nodeShadow)"><circle r="27" /><text dy="7">C</text></g>
+                <g class="node node-main" data-node-id="D" transform="translate(686 224)" filter="url(#nodeShadow)"><circle r="30" /><text dy="7">D</text></g>
+                <g class="node-label" data-label-id="D" transform="translate(686 274)"><rect x="-40" y="-13" width="80" height="27" rx="13" /><text dy="5">RECEIVER</text></g>
+                <g class="node node-alt" data-node-id="E" transform="translate(413 335)" filter="url(#nodeShadow)"><circle r="27" /><text dy="7">E</text></g>
+                <g class="node-label alternate-label" data-label-id="E" transform="translate(413 379)"><rect x="-45" y="-13" width="90" height="27" rx="13" /><text dy="5">ALT. RELAY</text></g>
+              </svg>
+              <div class="map-legend"><span><i class="legend-line active"></i>Active route</span><span><i class="legend-line reachable"></i>Reachable link</span><span><i class="legend-dot packet"></i>In transit</span><span><i class="legend-dot lost"></i>Lost attempt</span></div>
+            </div>
+
+            <div class="metrics-strip"><div><small>SIM TIME</small><strong id="simTime">0:00</strong></div><div><small>ON-AIR BYTES</small><strong id="txBytes">0 B</strong></div><div><small>AIRTIME</small><strong id="airtime">0.0 s</strong></div><div><small>LOST HOPS</small><strong id="lostCount">0</strong></div><div><small>EST. REMAINING</small><strong id="etaValue">—</strong></div></div>
+            <div class="network-bottom">
+              <div class="current-hop"><span class="hop-icon" aria-hidden="true">↗</span><div><small>CURRENT MOVEMENT</small><strong id="currentMovement">Ready to start</strong></div><span id="movementStatus" class="movement-tag">Idle</span></div>
+              <div class="network-actions"><button id="startButton" class="primary-button" type="button">Start image demo</button><button id="requestButton" class="ghost-button" type="button" disabled>Request sign detail</button><button id="playButton" class="ghost-button" type="button" disabled>Play</button><button id="stepButton" class="ghost-button" type="button" disabled>Next event</button><button id="toggleRelay" class="ghost-button" type="button">Disable relay C</button></div>
+            </div>
+          </section>
+
+          <aside class="inspector" aria-label="Packet and transfer details">
+            <section class="inspector-card packet-card"><div class="inspector-head"><p class="section-kicker">PACKET INSPECTOR</p><span class="icon-button" aria-hidden="true">◈</span></div><h2 id="packetTitle">No packet yet</h2><p id="packetSubtitle" class="muted">Start the image demo to see each hop.</p><div class="status-inline"><span id="packetStatusDot" class="status-dot blue"></span><strong id="packetStatus">Idle</strong></div><div class="packet-meta"><div><span>Direction</span><strong id="directionValue">—</strong></div><div><span>Attempt</span><strong id="attemptValue">—</strong></div><div><span>Packet size</span><strong id="sizeValue">—</strong></div></div><div class="hop-trace" id="hopTrace"></div></section>
+
+            <section class="inspector-card progress-card"><div class="inspector-head"><p class="section-kicker">IMAGE PROGRESS</p><span class="mini-label" id="representationLabel">NO TRANSFER</span></div><h3 id="progressTitle">Waiting for image</h3><div class="progress-number"><strong id="progressValue">0 <span>/ 0 chunks</span></strong><span id="progressPercent">0%</span></div><div class="progress-track"><div id="progressFill" style="width:0%"></div></div><div class="chunk-grid" id="chunkGrid" aria-label="No image chunks yet"></div><div class="progress-footer"><span><i class="mini-dot green"></i>Received</span><span><i class="mini-dot amber"></i>In transit</span><span><i class="mini-dot gray"></i>Missing</span></div><div class="received-image" id="receivedImageWrap" hidden><img id="receivedImage" alt="Verified image received over the simulated mesh" /><span id="receivedImageCaption">Verified image</span></div></section>
+
+            <section class="inspector-card knowledge-card"><p class="section-kicker">WHO KNOWS WHAT?</p><div class="knowledge-row"><span>Simulator</span><strong id="truthValue">Ready</strong></div><div class="knowledge-row"><span>Sender phone</span><strong id="senderValue">Nothing sent yet</strong></div><div class="knowledge-row"><span>Receiver phone</span><strong id="receiverValue">Nothing received yet</strong></div></section>
+          </aside>
+        </div>
+
+        <section class="bottom-grid">
+          <div class="timeline-card"><div class="card-heading compact"><div><p class="section-kicker">EVENT TIMELINE</p><h2>What happened, in order</h2></div><span class="mini-label">LIVE EVENTS</span></div><ol id="timeline" class="timeline"></ol></div>
+          <div class="controls-card"><div class="card-heading compact"><div><p class="section-kicker">SIMULATION CONTROLS</p><h2>Explore the scenario</h2></div></div><p class="controls-note">Drag a node on the map or edit its values below. Speed changes future hops; loss is checked at each hop.</p><label class="control-label" for="presetSelect"><span>Radio preset</span><strong id="rateValue">1.07 kbps</strong></label><select id="presetSelect"><option value="Long Fast">Long Fast</option><option value="Medium Fast">Medium Fast</option><option value="Short Turbo">Short Turbo</option><option value="Long Moderate">Long Moderate</option></select><label class="control-label loss-label" for="lossRange"><span>Packet loss per hop</span><strong id="lossValue">20%</strong></label><input id="lossRange" type="range" min="0" max="100" value="20" /><div class="range-labels"><span>0%</span><span>100%</span></div><label class="control-label node-editor-title" for="nodeSelect"><span>Selected node</span><strong id="nodeRole">Sender</strong></label><select id="nodeSelect"><option value="A">A · Sender</option><option value="B">B · Relay</option><option value="C">C · Relay</option><option value="D">D · Receiver</option><option value="E">E · Relay</option></select><div class="node-fields"><label>X <input id="nodeX" type="number" min="35" max="765" /></label><label>Y <input id="nodeY" type="number" min="50" max="385" /></label><label>Range (map units) <input id="nodeRange" type="number" min="30" max="500" /></label></div><label class="online-control"><input id="nodeOnline" type="checkbox" checked /> Node online</label><label class="control-label seed-label" for="seedInput"><span>Scenario seed (used on reset)</span></label><input id="seedInput" class="seed-input" type="number" min="1" value="16" /><button id="resetButton" class="reset-button" type="button">Reset simulation</button></div>
+        </section>
+
+        <p class="footer-note">Software simulation with real fixture bytes and a simplified shared-channel radio model. The binary demo envelope is Meshtastic-inspired; it is not firmware wire compatibility. The shown estimate is approximate.</p>
+      </main>
+    </div>
+  </body>
+</html>

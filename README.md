@@ -4,7 +4,7 @@
 
 imageoverbt is an off-grid messaging prototype for text, voice notes and recipient-directed images for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
 
-**Status:** Text and voice notes now work in both phone UIs over the existing mock transport, including compression, playback, verification and receipt ACKs. See [text/voice setup and contract](docs/TEXT_VOICE.md). Phase 1 image handling is implemented on `codex/media-handling`: local source retention, JPEG/WebP encoding, requested crops, bounded wire packets, restart-safe reconstruction and verified completion acknowledgments. A local interactive UI mock is available. The full firmware-backed mesh simulator and production app integration remain planned.
+**Status:** The `mesh-simulation` branch is integrated with both phone UIs. Text, Opus voice, image previews and requested detail tiles now relay their actual binary packets through its five-node, range-aware software mesh. The shared engine models per-hop loss, bounded retries, priority queueing and preset-based transmission time; requests and receipt ACKs use the reverse mesh. See [demo controls and model limits](docs/UI_MOCK.md) and [text/voice setup](docs/TEXT_VOICE.md). Firmware simulation and independent persistent endpoints remain unfinished.
 
 See the [architecture diagram and built-versus-planned breakdown](docs/ARCHITECTURE.md).
 
@@ -12,7 +12,7 @@ Run `python3 -m unittest discover -s tests -v` and `python3 -m imageoverbt.demo`
 
 Meshtastic interoperability uses the official [Python SDK](https://github.com/meshtastic/python) and generated [protobuf definitions](https://github.com/meshtastic/protobufs). Install `python3 -m pip install -e ".[meshtastic]"` and run `python3 -m imageoverbt.meshtastic_transport` for an offline protocol check. Frames are capped at 220 bytes to leave room for the Meshtastic wrapper and encryption overhead. See [upstream integration and simulator handoff](docs/MESHTASTIC.md).
 
-## Try the interactive mock
+## Try the integrated messaging demo
 
 Run `python3 -m imageoverbt.ui_server` after installation and open
 [localhost:8765](http://127.0.0.1:8765). Two phone chats surround an animated

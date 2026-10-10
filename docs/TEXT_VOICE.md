@@ -1,7 +1,7 @@
 # Text and voice messaging
 
 Text and voice notes are implemented in the two-phone local demo. They use the
-existing **mock mesh**, not real radio simulation. Video remains unimplemented.
+shared **software mesh engine** from `mesh-simulation`; see [model limits](UI_MOCK.md). Video remains unimplemented.
 
 ## Try it
 
@@ -68,7 +68,7 @@ ID; production retry scheduling is still a future integration.
 
 `meshtastic_transport.validate_frame` accepts tag 7, so manifests, data and ACKs
 can use the existing SDK Bridge. The UI sends actual packet bytes through the
-browser mock network, including reverse-direction messages and returning ACKs.
+shared range-aware mesh engine, including reverse-direction messages and returning ACKs.
 It does not open firmware/radio connections or implement the production scheduler.
 
 ## Persistence and honest status
@@ -97,7 +97,7 @@ Run `python -m unittest discover -s tests -v` and
 extra. Tests cover Unicode/compression limits, actual voice compression and decode,
 packet budgets, CRC/hash rejection, duplicate/reordered and partial reconstruction,
 restart recovery, matching completion ACKs, official protobuf wrapping and seeded
-20% packet loss across the mock three-hop path. Browser checks cover bidirectional
+20% packet loss across the modeled three-hop path. Browser checks cover bidirectional
 text, playable verified voice, disconnection and the existing image interaction.
 
 Codec references: [FFmpeg libopus options](https://ffmpeg.org/ffmpeg-codecs.html#libopus),

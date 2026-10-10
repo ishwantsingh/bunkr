@@ -1,4 +1,4 @@
-# Interactive UI mock
+# Integrated software mesh demo
 
 ## Run
 
@@ -8,71 +8,84 @@ python3 -m venv .venv
 .venv/bin/python -m imageoverbt.ui_server --port 8765
 ```
 
-Open http://127.0.0.1:8765. The server binds to loopback, uses a temporary local
-SQLite database, and deletes its demo state when stopped. No cloud service or
-radio is contacted. Use `--source /absolute/path/photo.jpg` for a different local
-photo; Pillow must support its format. The initial selection is tuned for the
-committed Oak Flat fixture. After installation, `imageoverbt-ui` is equivalent.
-
-For text and voice, see [TEXT_VOICE.md](TEXT_VOICE.md). Both phones now offer
-typing, recording, audio import and a bundled voice sample, with real verification
-and returning completion ACKs over this same mock mesh. FFmpeg is required for voice.
+Open http://127.0.0.1:8765. Install FFmpeg for voice. The server binds to loopback,
+uses a temporary SQLite database and removes its demo state when stopped. No cloud
+service or physical radio is contacted. `--source /absolute/path/photo.jpg` chooses
+a local photo. See [TEXT_VOICE.md](TEXT_VOICE.md) for recording, import and playback.
 
 ## Experience
 
-The sender phone is on the left, the five-node mesh in the middle, and the
-recipient phone on the right. The tiny preview automatically sends once on first
-load. **Send again** repeats it; **Reset demo** returns to the manual send step.
+Sender phone → five-node mesh → recipient phone. The preview sends automatically
+on first load. **Send again** repeats it; **Reset demo** resets the session.
+Drag or resize the crop box and click **Request section** above the image. The
+binary request crosses the reverse mesh before encoding starts. Six independent
+source crops sharpen the selected region as each passes CRC, SHA-256, decoding
+and dimensions checks. Previously verified sections remain visible. Arrow keys
+move the box; Shift+arrows resize it.
 
-On the recipient phone, drag the crop box or resize its corners. **Request
-section** sits directly above the image. The request travels back through the
-mesh before the sender extracts detail. Six independently encoded source crops
-arrive and sharpen the selected region progressively. Each piece must pass packet
-CRC, whole-representation SHA-256, decoding and dimensions checks before display.
-Previously verified sections stay visible when another section is requested.
-Keyboard: focus the box and use arrows to move; Shift+arrows resize.
+Both phones can send text and compressed Opus voice. The recipient displays or
+plays only verified content. The sender confirms receipt only after the matching
+application ACK crosses the mesh back to the sender and is validated by the API.
 
-The map shows packet bursts hopping between nodes, losses and selective retries.
-Take B offline to switch to A → E → D. Click relay nodes to enable/disable them.
-Disconnect the network to stop progress; reconnect to resume retained chunks.
-Pause and speed controls change the animation; packet loss can be set from 0–40%.
-No arrival countdown is shown while disconnected. Sender receipt confirmation
-appears only after the application completion ACK returns.
+The map observes the shared `mesh-simulation` engine's actual packet events:
 
-## Reuse and scope
+- Default route: A → B → C → D. **Take C offline** reroutes through B → E → D.
+- Click relay nodes to toggle them. Removing B isolates A; restoring it resumes.
+- Choose a relay and change its range: links require mutual range and both nodes online.
+- Radio presets change modeled transmission time. Loss applies independently per hop (0–100%).
+- Disconnect/pause preserves received chunks and freezes progress. No arrival promise is made without a route.
+- Replay speed cycles 40× / 80× / 160×. It changes playback of simulated time, not the radio rate or measured byte counts.
+- Timeline times are simulated elapsed time. Counters include every hop, retry and control packet.
 
-This is a working **visual mock**, not a completed Phase 2 firmware simulation.
-It uses the actual Python media encoder, binary version 2 contract and persistent
-sender cache. With the Meshtastic extra installed, every outgoing application
-frame is serialized through upstream `meshtastic.protobuf.mesh_pb2.Data` on
-`PRIVATE_APP` 256; sizes include the documented radio/encryption envelope reserve.
-The browser independently reconstructs and verifies the actual encoded bytes.
+## Engine and packet integration
 
-The topology, SVG map and accelerated packet animation are local demo code.
-Routing prefers A → B → C → D, then chooses an available alternate path. Loss is
-seeded per hop; a missing frame retries end to end, capped at 32 attempts. At most
-20 packets are animated as one burst. This model does not implement shared-channel
-contention, RF range, duty-cycle limits, LoRa airtime, erasure correction or the
-production scheduler. Timeline timestamps are a monotonic illustrative demo clock,
-not measured RF timing. Do not interpret the animation speed as radio performance.
+The canonical engine is `imageoverbt/ui/mesh/simulator.mjs`, imported from branch
+`mesh-simulation`. `network.mjs` adapts the existing native version-2 binary media
+contract to it without replacing the content with fixture IDs or JSON wrappers.
+`mesh-ui/simulator.mjs` re-exports the same engine for the standalone demo.
 
-[Meshtastic Python](https://github.com/meshtastic/python) and its generated
+Application frames remain at most 220 bytes. Modeled radio accounting adds 33–34
+bytes per frame for the existing protobuf/encryption/radio reserve; a full frame
+therefore costs 254 radio bytes per hop. These envelopes are accounting, not
+physical radio transmission. With the optional SDK installed, Python also checks
+official `PRIVATE_APP` 256 protobuf serialization.
+
+One shared radio queue gives control packets priority over detail, preview and
+background traffic at packet boundaries. Transmission time is estimated as
+`radio bytes × 8 / preset bitrate + 0.12 seconds`. Each frame has at most five
+failed-hop attempts per round. After a stalled transfer's 15-second timeout,
+missing data is requested using real binary tag-6 packets from receiver to sender;
+only requested missing chunks are resent after that request arrives. Lost manifests
+and controls use sender timeouts. Application recovery is bounded to three rounds.
+Exhaustion reports failure and allows retry; it never becomes a delivered receipt.
+
+## Limits and reuse
+
+This is the branch's deterministic software model, **not Meshtastic firmware
+emulation**. It uses distance-based range, BFS routing, seeded loss, approximate
+preset rates and a serialized shared channel. It does not model LoRa PHY airtime,
+RF propagation, collisions, duty cycles, fair scheduling, backpressure or FEC.
+The UI still hosts both phones in one browser, with browser receive state in RAM.
+Independent durable endpoints and the SDK bridge/firmware path remain unfinished.
+
+The standalone fixture demo retains its separate original 230-byte envelope
+contract. It is available by serving the repository root and opening
+`/mesh-ui/index.html`; the integrated messaging app does not use its generated
+SVG image fixtures or receipt implementation.
+
+[Meshtastic Python](https://github.com/meshtastic/python) and generated
 [protobufs](https://github.com/meshtastic/protobufs) are reused directly.
-[Meshtasticator](https://github.com/meshtastic/Meshtasticator) remains the Phase 2
-firmware simulator target. The upstream [web client](https://github.com/meshtastic/web)
-was reviewed; this focused two-phone mock does not need its full device-management
-application. No upstream UI or simulator source is copied. See
-[MESHTASTIC.md](MESHTASTIC.md) for upstream attribution and license notes.
+[Meshtasticator](https://github.com/meshtastic/Meshtasticator) remains a future
+firmware simulation target. See [MESHTASTIC.md](MESHTASTIC.md) for attribution.
 
 ## Checks
 
 ```sh
 .venv/bin/python -m unittest discover -s tests -v
-node --test tests/ui/*.test.mjs
+node --test tests/ui/*.test.mjs mesh-ui/simulator.test.mjs
 ```
 
-Python checks cover the real crop producer, tile coverage, independently verified
-reconstruction and completion acknowledgments. Node checks cover browser parsing
-against Python golden fixtures, exact image reconstruction, corrupt/incomplete
-bytes, coordinate clamping, reverse-path requests, deterministic loss, interrupted
-routes, retained progress and retry exhaustion. CI runs both suites.
+Checks cover native image/text/voice reconstruction over 20% per-hop loss,
+reverse requests/receipts, missing-chunk recovery, bounded failure, interrupted
+routes, range changes, preset timing and byte accounting, plus the original
+standalone engine scenarios. CI runs both suites.

@@ -9,14 +9,14 @@ if(!globalThis.crypto)globalThis.crypto=webcrypto;
 const fixtures=JSON.parse(readFileSync(new URL('../../fixtures/messages/messages.json',import.meta.url)));
 for(const [name,f] of Object.entries(fixtures))test(`Python ${name} packets reconstruct exactly through 20% loss on three hops`,async()=>{
   const m=parseMessageManifest(f.manifest),assembler=new Reassembler(m),network=new Network({loss:.2,seed:41});
-  network.enqueue(f.packets.map(wire=>({wire})));let count=0;
-  while(network.pending&&count++<10000)for(const frame of network.advance().received)assembler.add(frame.wire);
+  network.enqueue([{wire:f.manifest,manifest:true},...f.packets.map(wire=>({wire}))]);let count=0;
+  while(network.pending&&count++<10000)for(const frame of (await network.advance({seconds:100})).received)if(!frame.manifest)assembler.add(frame.wire);
   assert.equal(network.pending,0);const bytes=await assembler.verifiedBytes();
   assert.equal(makeAck(m),f.ack);
   if(m.kind===0){const text=await decodeMessageText(bytes,m.codec);assert.equal(text,name==='unicode'?'At the junction 🌲 — नमस्ते':'Meet at the junction. '.repeat(100));}
   else{validateVoiceHeader(bytes);assert.equal(new TextDecoder().decode(bytes.slice(0,4)),'OggS');assert.equal(m.sampleRate,16000);assert.ok(m.duration>1000);}
   network.enqueue([{wire:makeAck(m)}],true);let received=0;
-  while(network.pending)received+=network.advance().received.length;
+  while(network.pending)received+=(await network.advance({seconds:100})).received.length;
   assert.equal(received,1);
 });
 test('incomplete or modified message cannot produce verified bytes',async()=>{
@@ -40,9 +40,9 @@ test('text decompression and UTF-8 decoding are bounded and strict',async()=>{
 });
 test('voice transfer interrupted mid-route retains received chunks',async()=>{
   const f=fixtures.voice,m=parseMessageManifest(f.manifest),a=new Reassembler(m),n=new Network({loss:.2,seed:4});
-  n.enqueue(f.packets.map(wire=>({wire})));n.advance();n.enabled.delete('B');n.online=false;
-  const pending=n.pending;assert.equal(n.advance().state,'waiting');assert.equal(n.pending,pending);
-  n.online=true;while(n.pending)for(const frame of n.advance().received)a.add(frame.wire);
+  n.enqueue(f.packets.map(wire=>({wire})));await n.advance({seconds:.01});n.enabled.delete('C');n.online=false;
+  const pending=n.pending;assert.equal((await n.advance()).state,'waiting');assert.equal(n.pending,pending);
+  n.online=true;while(n.pending)for(const frame of (await n.advance({seconds:100})).received)a.add(frame.wire);
   assert.equal((await a.verifiedBytes()).length,m.bytes);
 });
 

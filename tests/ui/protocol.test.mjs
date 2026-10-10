@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {webcrypto} from 'node:crypto';
-import {parseManifest,Reassembler,makeAck,makeRequest,fromHex,validate,toHex} from '../../imageoverbt/ui/protocol.mjs';
+import {parseManifest,Reassembler,makeAck,makeRequest,makeMissing,fromHex,validate,toHex} from '../../imageoverbt/ui/protocol.mjs';
 if(!globalThis.crypto)globalThis.crypto=webcrypto;
 const root=new URL('../../fixtures/wire/',import.meta.url);
 test('browser reassembles actual Python golden frames exactly after reordering and duplicates',async()=>{
@@ -29,4 +29,11 @@ test('corrupt and incomplete data never publishes verified detail',async()=>{
   const bad=fromHex(packets[0]);bad[44]^=1;
   assert.throws(()=>assembler.add(toHex(bad)),/integrity/);
   assert.equal(assembler.chunks.size,1);
+});
+
+test('missing-chunk request matches Python binary contract and respects frame bounds',async()=>{
+  assert.deepEqual(Buffer.from(fromHex(makeMissing('12'.repeat(16),[0,3,49,65535]))),await readFile(new URL('missing.request.bin',root)));
+  const max=fromHex(makeMissing('12'.repeat(16),Array.from({length:49},(_,i)=>i)));validate(max,6);assert.equal(max.length,218);
+  for(const indices of [[],Array(50).fill(0),[-1],[1.5],[100000]])assert.throws(()=>makeMissing('12'.repeat(16),indices));
+  assert.throws(()=>makeMissing('12',[0]),/representation ID/);
 });
