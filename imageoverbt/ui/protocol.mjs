@@ -72,3 +72,34 @@ export function clampBounds(bounds) {
   x0=Math.max(0,Math.min(1-width,x0)); y0=Math.max(0,Math.min(1-height,y0));
   return [x0,y0,x0+width,y0+height];
 }
+
+// Tag 7 extends v2 for text/voice; packet and completion ACK layouts are shared.
+export function parseMessageManifest(hex) {
+  const b=fromHex(hex),v=validate(b,7);
+  if(b.length!==80)throw Error('Invalid message manifest length');
+  const id=toHex(b.slice(2,18));
+  const m={id,imageId:id,sender:v.getUint32(18),recipient:v.getUint32(22),kind:b[26],codec:b[27],
+    bytes:v.getUint32(28),count:v.getUint32(32),duration:v.getUint32(36),sampleRate:v.getUint32(40),hash:toHex(b.slice(44,76))};
+  if(id==='00'.repeat(16)||!m.sender||m.sender>=0xffffffff||!m.recipient||m.recipient>=0xffffffff||m.sender===m.recipient||
+     ![0,1].includes(m.kind)||!m.bytes||m.bytes>(m.kind===0?16384:204800)||m.count!==Math.ceil(m.bytes/174))throw Error('Invalid message metadata');
+  if(m.kind===0?(![0,1].includes(m.codec)||m.duration!==0||m.sampleRate!==0):(m.codec!==2||m.duration<1||m.duration>60000||m.sampleRate!==16000))throw Error('Invalid message codec or duration');
+  return m;
+}
+export async function decodeMessageText(bytes,codec) {
+  if(codec===1){
+    const reader=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate')).getReader();
+    const chunks=[];let size=0;
+    try{
+      while(true){const {value,done}=await reader.read();if(done)break;size+=value.length;if(size>16384)throw Error('Decompressed text exceeds limit');chunks.push(value);}
+    }finally{await reader.cancel().catch(()=>{});}
+    bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+  }else if(codec!==0)throw Error('Invalid text codec');
+  if(!bytes.length||bytes.length>16384)throw Error('Invalid text size');
+  const text=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+  if(!text.trim())throw Error('Text cannot be blank');
+  return text;
+}
+export function validateVoiceHeader(bytes) {
+  const prefix=new TextDecoder('latin1').decode(bytes.subarray(0,128)),head=prefix.indexOf('OpusHead');
+  if(prefix.slice(0,4)!=='OggS'||head<0||bytes.length<head+19||bytes[head+9]!==1)throw Error('Expected mono Ogg Opus voice note');
+}

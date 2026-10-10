@@ -65,6 +65,9 @@ packet generation, hop limits, priorities, PKI flag, incoming packet filtering,
 subscription cleanup, malformed payloads and envelope sizes. Base-only installs
 skip these optional tests; CI installs the extra and runs all tests.
 
+Text and voice use the same bridge with tag-7 manifests and shared data/ACK
+frames. See [TEXT_VOICE.md](TEXT_VOICE.md) for their codec and persistence contract.
+
 ## Adapter API
 
 `imageoverbt.meshtastic_transport.Bridge` accepts an already-connected upstream

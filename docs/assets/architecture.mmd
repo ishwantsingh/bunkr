@@ -1,0 +1,36 @@
+flowchart LR
+    s["1 · SENDER PHONE UI<br/>Type / record / send photo<br/>Built UI; shared demo session"]
+    m["2 · LOCAL MEDIA ENGINE — BUILT<br/>Retain original in SQLite<br/>Encode text / Opus / image"]
+    w["3 · PACKETS — BUILT<br/>Manifest + image chunks<br/>220-byte frames / CRC / SHA-256<br/>Official Meshtastic protobuf wrapping"]
+    subgraph mock["MOCK TRANSPORT — REPLACE THIS BOX"]
+        n["4 · Browser mesh engine<br/>A → B → C → D<br/>Synthetic loss / retries / rerouting<br/>Illustrative timing"]
+    end
+    v["5 · RECEIVER — BUILT<br/>Reassemble actual bytes<br/>Verify hash / decode each tile<br/>Receive progress currently in memory"]
+    r["6 · RECIPIENT PHONE UI<br/>Display blurry preview<br/>Select crop / Request section<br/>Show verified sharp tiles"]
+
+    s -->|"Photo"| m
+    m -->|"Encoded image"| w
+    w -->|"Actual packet bytes"| n
+    n -->|"Delivered packets"| v
+    v -->|"Verified pixels"| r
+    r -.->|"Crop request returns through mesh; then create detail"| m
+    v -.->|"Completion ACK returns through mesh; then confirm receipt"| s
+
+    subgraph actual["ACTUAL TRANSPORT REPLACEMENT — NOT YET CONNECTED"]
+        direction LR
+        q["Endpoint dispatcher + scheduler<br/>Priority / fairness / retry / expiry<br/>NOT BUILT"]
+        b["Meshtastic SDK Bridge<br/>BUILT; offline tested"]
+        f["Meshtasticator firmware nodes<br/>Radio timing / loss / contention<br/>INTEGRATION NOT BUILT"]
+        p["Independent receiver endpoint<br/>Durable receive / ACK dispatch<br/>INTEGRATION NOT BUILT"]
+        q --> b --> f --> p
+    end
+    n ==>|"REPLACE WITH THIS TRANSPORT PATH"| q
+
+    classDef built fill:#e8f5ed,stroke:#26834a,color:#163c26;
+    classDef mock fill:#fff3d6,stroke:#b67b13,stroke-width:2px,color:#654507;
+    classDef planned fill:#eaf2ff,stroke:#4573b9,stroke-width:2px,stroke-dasharray:5 4,color:#203c63;
+    class s,m,w,v,r,b built;
+    class n mock;
+    class q,f,p planned;
+    style mock fill:#fffbef,stroke:#b67b13,stroke-width:3px
+    style actual fill:#f5f8ff,stroke:#4573b9,stroke-width:3px

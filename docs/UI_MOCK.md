@@ -14,6 +14,10 @@ radio is contacted. Use `--source /absolute/path/photo.jpg` for a different loca
 photo; Pillow must support its format. The initial selection is tuned for the
 committed Oak Flat fixture. After installation, `imageoverbt-ui` is equivalent.
 
+For text and voice, see [TEXT_VOICE.md](TEXT_VOICE.md). Both phones now offer
+typing, recording, audio import and a bundled voice sample, with real verification
+and returning completion ACKs over this same mock mesh. FFmpeg is required for voice.
+
 ## Experience
 
 The sender phone is on the left, the five-node mesh in the middle, and the

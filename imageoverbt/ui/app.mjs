@@ -1,4 +1,5 @@
 import {parseManifest, Reassembler, makeAck, makeRequest, clampBounds, fromHex, validate} from './protocol.mjs';
+import {mountMessages} from './messages.mjs';
 import {Network, NODES, LINKS, route} from './network.mjs';
 
 const $ = id => document.getElementById(id);
@@ -6,6 +7,8 @@ const svgNS='http://www.w3.org/2000/svg';
 let network=new Network(), demo=null, transfer=null, busy=false, previewReady=false, generation=0;
 let bounds=[.18,.25,.84,.59], speed=1, tickBusy=false, autoStart=null, clock=0;
 const objectURLs=new Set();
+let messages;
+function setBusy(value){busy=value;messages?.controls();}
 const icon=(id)=>`<svg><use href="#i-${id}"/></svg>`;
 function svgElement(tag,attrs={}) {const el=document.createElementNS(svgNS,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);return el;}
 function event(text,type='normal') {
@@ -18,7 +21,7 @@ function event(text,type='normal') {
 function toast(message) {$('toast').textContent=message;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,5000);}
 async function api(path,payload) {
   const response=await fetch(path,payload===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const data=await response.json();if(!response.ok)throw Error(data.error||'Could not process image');return data;
+  const data=await response.json();if(!response.ok)throw Error(data.error||'Could not process message');return data;
 }
 function cancelError(){const error=Error('Demo reset');error.name='AbortError';return error;}
 function guard(version){if(version!==generation)throw cancelError();}
@@ -61,19 +64,20 @@ function metrics(){
   $('retry-metric').innerHTML=`${network.lost} <small>packets</small>`;
   if(transfer){const count=transfer.received;const total=transfer.total;$('packet-count').innerHTML=`${count} <small>/ ${total} packets</small>`;$('progress-fill').style.width=`${count/total*100}%`;$('progress-label').textContent=transfer.label;}
 }
-function runFrames(frames,{label,reverse=false,onFrame=async()=>{}}){
+function runFrames(frames,{label,reverse=false,onFrame=async()=>{},onState=()=>{}}){
   if(transfer)throw Error('A transfer is already active');
-  return new Promise((resolve,reject)=>{transfer={resolve,reject,label,reverse,onFrame,total:frames.length,received:0,generation};network.enqueue(frames,reverse);metrics();});
+  return new Promise((resolve,reject)=>{transfer={resolve,reject,label,reverse,onFrame,total:frames.length,received:0,generation,onState};network.enqueue(frames,reverse);metrics();});
 }
 async function tick(){
   if(tickBusy||!transfer)return;tickBusy=true;
   const current=transfer;
   try{
     const result=network.advance();
+    current.onState?.(result.state);
     $('map-state').hidden=!['waiting','paused'].includes(result.state);
     if(result.state==='waiting'||result.state==='paused'){
       $('map-state').querySelector('strong').textContent=result.state==='paused'?'Simulation paused':'Waiting for a route';
-      $('map-state').querySelector('span').textContent='Received progress is saved.';return;
+      $('map-state').querySelector('span').textContent='Received progress is retained in this session.';return;
     }
     if(result.state==='hopping'){
       animateHop(result);
@@ -98,7 +102,7 @@ async function decodeVerified(reassembler){
   const url=URL.createObjectURL(blob);objectURLs.add(url);return url;
 }
 async function sendPhoto(){
-  if(busy||!demo)return;const version=generation;busy=true;
+  if(busy||!demo)return;const version=generation;setBusy(true);
   $('send-photo').disabled=true;$('request-section').disabled=true;$('another-section').hidden=true;
   $('detail-tiles').replaceChildren();$('crop-box').hidden=true;$('preview-image').hidden=true;$('image-placeholder').hidden=false;$('selection-help').hidden=false;
   previewReady=false;step(1);senderStatus('Sending tiny preview','The full photo stays on Alex’s phone.',true);recipientStatus('A preview is on its way','Packets are hopping across the mesh.');
@@ -119,10 +123,10 @@ async function sendPhoto(){
     $('progress-label').textContent='Preview delivered';$('packet-count').innerHTML=`${m.count+1} <small>/ ${m.count+1} packets</small>`;
     $('network-subtitle').textContent='Choose a section on Sam’s phone to bring it into focus.';
   }catch(error){if(error.name!=='AbortError'){toast(error.message);senderStatus('Transfer stopped',error.message);}}
-  finally{if(version===generation){busy=false;$('send-photo').disabled=false;}}
+  finally{if(version===generation){setBusy(false);$('send-photo').disabled=false;}}
 }
 async function requestSection(){
-  if(busy||!previewReady)return;const version=generation;busy=true;
+  if(busy||!previewReady)return;const version=generation;setBusy(true);
   $('request-section').disabled=true;$('send-photo').disabled=true;$('another-section').hidden=true;$('selection-help').hidden=true;
   $('crop-box').classList.add('locked');$('crop-box-label').textContent='REQUESTING DETAIL';step(3);
   const selected=[...bounds],requestId=crypto.randomUUID().replaceAll('-','');
@@ -164,11 +168,11 @@ async function requestSection(){
     $('receiver-image-status').textContent='PREVIEW + VERIFIED HD SECTION';$('another-section').hidden=false;step(3,true);
     $('network-subtitle').textContent='Requested detail is clear. The rest can stay a preview.';event('Completion ACK reached A · sender receipt confirmed','verified');
   }catch(error){if(error.name!=='AbortError'){toast(error.message);recipientStatus('Detail transfer stopped',error.message);$('crop-box').classList.remove('locked');$('request-section').disabled=false;}}
-  finally{if(version===generation){busy=false;$('send-photo').disabled=false;}}
+  finally{if(version===generation){setBusy(false);$('send-photo').disabled=false;}}
 }
 function reset(){
-  generation++;drag=null;clearTimeout(autoStart);if(transfer){transfer.reject(cancelError());transfer=null;}
-  network=new Network({loss:Number($('loss').value)/100});previewReady=false;busy=false;clock=0;
+  generation++;messages?.reset();drag=null;clearTimeout(autoStart);if(transfer){transfer.reject(cancelError());transfer=null;}
+  network=new Network({loss:Number($('loss').value)/100});previewReady=false;setBusy(false);clock=0;
   for(const url of objectURLs)URL.revokeObjectURL(url);objectURLs.clear();
   $('events').replaceChildren();$('timeline-empty').hidden=false;$('detail-tiles').replaceChildren();$('mesh-packets').replaceChildren();
   $('map-state').hidden=true;$('crop-box').hidden=true;$('preview-image').hidden=true;$('image-placeholder').hidden=false;$('local-reply').hidden=true;$('another-section').hidden=true;$('selection-help').hidden=false;
@@ -201,6 +205,7 @@ $('relay-toggle').addEventListener('click',()=>toggleRelay('B'));
 $('loss').addEventListener('input',()=>{network.loss=Number($('loss').value)/100;$('loss-value').textContent=$('loss').value+'%';$('loss-metric').innerHTML=$('loss').value+'<small>%</small>';});
 $('pause').addEventListener('click',()=>{network.paused=!network.paused;$('pause').innerHTML=icon(network.paused?'play':'pause');$('pause').setAttribute('aria-label',network.paused?'Resume simulation':'Pause simulation');if(!network.paused)$('map-state').hidden=true;});
 $('speed').addEventListener('click',()=>{speed=speed===1?2:speed===2?4:1;$('speed').textContent=speed+'×';clearInterval(timer);timer=setInterval(tick,200/speed);});
+messages=mountMessages({api,runFrames,event,urls:objectURLs,isBusy:()=>busy,setBusy,generation:()=>generation,guard,cancelAutoStart:()=>clearTimeout(autoStart),composeBusy:disabled=>{$('send-photo').disabled=disabled||!demo;$('request-section').disabled=disabled||!previewReady||$('crop-box').classList.contains('locked');}});
 reset();
-try{demo=await api('/api/demo');$('protocol-label').textContent=demo.transport;$('send-photo').disabled=false;autoStart=setTimeout(sendPhoto,700);}
+try{demo=await api('/api/demo');messages.ready(demo.voice_available);$('protocol-label').textContent=demo.transport;$('send-photo').disabled=false;autoStart=setTimeout(sendPhoto,700);}
 catch(error){toast('Could not load the media demo: '+error.message);$('protocol-label').textContent='Media server unavailable';}

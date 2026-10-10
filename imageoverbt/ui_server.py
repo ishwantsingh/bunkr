@@ -1,5 +1,6 @@
-"""Local interactive mock backed by the real image codec and wire contract."""
+"""Local messaging mock backed by real text, voice and image codecs."""
 import argparse
+import base64
 from dataclasses import asdict
 from functools import partial
 from hashlib import sha256
@@ -11,6 +12,7 @@ from tempfile import TemporaryDirectory
 
 from .contract import Ack, Bounds, Manifest, Request
 from .media import Store
+from .messages import MessageStore, MAX_UPLOAD, voice_available
 
 UI_DIR = Path(__file__).with_name('ui')
 SOURCE = Path(__file__).resolve().parents[1] / 'fixtures/trail-sign.jpg'
@@ -64,7 +66,46 @@ class DemoModel:
             preview = store.produce(self.image_id, 1, 2, budget=300)
             return dict(image_id=self.image_id, transport=self.transport,
                         preview=self.representation(preview),
-                        default_bounds=[.18, .25, .84, .59])
+                        default_bounds=[.18, .25, .84, .59],
+                        voice_available=voice_available())
+
+    def message(self, payload):
+        sender = payload.get('sender', 1)
+        if type(sender) is not int or sender not in (1, 2):
+            raise ValueError('Choose sender 1 or 2')
+        store = MessageStore(self.database)
+        try:
+            kind = payload['kind']
+            if kind == 'text':
+                original = payload['text']
+                message = store.produce_text(original, sender, 3-sender)
+                input_bytes = len(original.encode('utf-8'))
+            elif kind in ('voice', 'voice_sample'):
+                if kind == 'voice_sample':
+                    data = (SOURCE.parent / 'trail-voice.ogg').read_bytes()
+                else:
+                    encoded = payload['audio']
+                    if not isinstance(encoded, str) or len(encoded) > (MAX_UPLOAD+2)//3*4:
+                        raise ValueError('Audio upload exceeds 8 MiB')
+                    data = base64.b64decode(encoded, validate=True)
+                input_bytes = len(data)
+                message = store.produce_voice(data, sender, 3-sender)
+            else:
+                raise ValueError('Choose text or voice')
+            result = self.representation(message)
+            result['input_bytes'] = input_bytes
+            return result
+        finally:
+            store.close()
+
+    def confirm_message(self, payload):
+        wire = bytes.fromhex(payload['ack'])
+        store = MessageStore(self.database)
+        try:
+            store.confirm(wire)
+            return dict(confirmed=store.confirmed(Ack.decode(wire).representation_id))
+        finally:
+            store.close()
 
     def crop(self, payload):
         bounds = Bounds.normalized(*payload['bounds'])
@@ -100,11 +141,16 @@ class Handler(SimpleHTTPRequestHandler):
         self.model = model
         super().__init__(*args, directory=str(UI_DIR), **kwargs)
 
+    def end_headers(self):
+        # The demo serves editable ES modules directly. Never combine a cached
+        # dependency with a newer importing module after a local code change.
+        self.send_header('Cache-Control', 'no-store')
+        super().end_headers()
+
     def respond(self, value, status=200):
         data = json.dumps(value).encode()
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
-        self.send_header('Cache-Control', 'no-store')
         self.send_header('Content-Length', str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -127,13 +173,18 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         try:
             size = int(self.headers.get('Content-Length', '0'))
-            if not 0 < size <= 4096:
+            limit = 12*1024*1024 if self.path == '/api/message' else 65536
+            if not 0 < size <= limit:
                 raise ValueError('Invalid request size')
             payload = json.loads(self.rfile.read(size))
             if self.path == '/api/crop':
                 self.respond(self.model.crop(payload))
             elif self.path == '/api/confirm':
                 self.respond(self.model.confirm(payload))
+            elif self.path == '/api/message':
+                self.respond(self.model.message(payload))
+            elif self.path == '/api/message/confirm':
+                self.respond(self.model.confirm_message(payload))
             else:
                 self.respond({'error': 'Not found'}, 404)
         except (ValueError, KeyError, TypeError, OverflowError) as exc:

@@ -4,6 +4,9 @@ Implementation: `imageoverbt/contract.py`, `media.py`, `events.py`. Python 3.11+
 and Pillow are the only runtime requirements. Mesh scheduling and the app are
 consumers of this module, and are not implemented here.
 
+Text/voice extend this contract with tag 7; see [TEXT_VOICE.md](TEXT_VOICE.md).
+FFmpeg is an additional runtime dependency for voice encoding/validation.
+
 ## Wire layout
 
 All integers use network byte order. Frames contain a uint8 version (`2`), a

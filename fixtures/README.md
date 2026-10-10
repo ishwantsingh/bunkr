@@ -27,3 +27,16 @@ from `demo-output/`. Use committed encoded bytes for cross-language golden tests
 codec output may differ across Pillow/libjpeg/libwebp versions. Neither Python's
 random sequence nor codec bytes are intended as a cross-language simulation seed
 contract.
+
+## Voice and text fixtures
+
+`trail-voice.ogg` is local synthesized demo speech generated using the macOS
+Samantha system voice, then encoded as mono Opus. It says: “At the junction. Take
+the left trail toward Pine Lake. I will wait by the sign.” It contains no user
+recording and is used only as a reproducible playback/transport sample. It does
+not describe the photographed sign; the image fixture remains unchanged.
+
+`messages/messages.json` contains tag-7 manifests, tag-3 data frames and expected
+tag-4 ACKs for Unicode text, compressed text and a normalized voice note. These
+are cross-language golden fixtures. Voice encoder output can vary by FFmpeg/Opus
+version, so tests consume the committed bytes.

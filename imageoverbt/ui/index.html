@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f5f2"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232879ec'/%3E%3Cpath d='M8 16 23 7v18Z' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E"><title>imageoverbt — Off-grid image lab</title><link rel="stylesheet" href="/style.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f5f2"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232879ec'/%3E%3Cpath d='M8 16 23 7v18Z' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E"><title>imageoverbt — Off-grid messaging lab</title><link rel="stylesheet" href="/style.css"></head>
 <body>
 <svg class="icon-library" xmlns="http://www.w3.org/2000/svg"><defs>
 <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
@@ -13,6 +13,7 @@
 <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
 <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z"/></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11v1a7 7 0 0 0 14 0v-1m-7 8v3m-4 0h8"/></symbol>
 <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8" cy="9" r="1.5"/><path d="m3 17 5-5 4 4 4-6 5 6"/></symbol>
 </defs></svg>
 <header class="app-header">
@@ -20,20 +21,21 @@
   <div class="header-right"><span class="mock-label"><span></span>Interactive mock</span><button id="reset" class="quiet-button"><svg><use href="#i-reset"/></svg>Reset demo</button></div>
 </header>
 <main>
-  <div class="workspace-heading"><div><span class="eyebrow">RECIPIENT-DIRECTED IMAGE DELIVERY</span><h1>Off-grid image delivery</h1></div><div class="walkthrough"><span id="step-one" class="step current"><b>1</b>Send</span><i></i><span id="step-two" class="step"><b>2</b>Select</span><i></i><span id="step-three" class="step"><b>3</b>Sharpen</span></div></div>
+  <div class="workspace-heading"><div><span class="eyebrow">TEXT · VOICE · RECIPIENT-DIRECTED IMAGES</span><h1>Off-grid messaging</h1></div><div class="walkthrough"><span id="step-one" class="step current"><b>1</b>Send</span><i></i><span id="step-two" class="step"><b>2</b>Select</span><i></i><span id="step-three" class="step"><b>3</b>Sharpen</span></div></div>
   <div class="workspace">
     <section class="phone-column sender-column" aria-label="User 1 sender phone">
       <div class="column-label"><span><span class="role-dot"></span>USER 1 <strong>Sender</strong></span><span class="node-label">NODE A</span></div>
       <div class="phone"><div class="phone-edge"></div><div class="phone-screen">
         <div class="status-bar"><span>9:41</span><div class="island"></div><span class="device-status">▮▮▮ <span class="wifi">⌁</span><span class="battery"></span></span></div>
         <div class="chat-header"><svg class="back"><use href="#i-back"/></svg><div class="avatar">S</div><div><strong>Sam</strong><span><i></i>Off-grid · Radio connected</span></div><span class="chat-more">···</span></div>
-        <div class="chat-content"><div class="chat-date">TODAY 9:41 AM</div><div class="chat-message incoming-message">Made it to the junction?</div>
+        <div class="chat-content" id="alex-chat"><div class="chat-date">TODAY 9:41 AM</div><div class="chat-message incoming-message" aria-label="Example conversation">Made it to the junction? <small class="example-label">Example</small></div>
           <div class="photo-bubble sent-bubble"><div class="source-photo"><img src="/api/source.jpg" alt="The original photograph of the Oak Flat Loop trail sign"><span class="image-badge">Original</span></div><p>Found it. Which way do we go?</p><div class="message-time">9:41 <span id="sender-ticks">✓</span></div></div>
           <div class="transfer-note" id="sender-note"><span class="note-icon"><svg><use href="#i-photo"/></svg></span><div><strong id="sender-status">Photo ready to send</strong><span id="sender-detail">Original stays on this phone.</span></div><span id="sender-note-dot" class="note-dot"></span></div>
           <div class="local-reply" id="local-reply" hidden><span class="avatar tiny">S</span><div>Just the sign, please.<span>Detail request received</span></div></div>
         </div>
-        <div class="sender-action"><button id="send-photo" class="primary-button"><svg><use href="#i-arrow"/></svg>Send photo</button><span>No cellular. No Wi-Fi. Just the mesh.</span></div>
-        <div class="composer"><button class="composer-plus" aria-label="Image-only demo" disabled><svg><use href="#i-plus"/></svg></button><span>Message via mesh</span><span class="composer-send"><svg><use href="#i-arrow"/></svg></span></div><div class="home-indicator"></div>
+        <div class="sender-action"><button id="send-photo" disabled class="primary-button"><svg><use href="#i-arrow"/></svg>Send photo</button><span>No cellular. No Wi-Fi. Just the mesh.</span></div>
+        <div class="message-tools" data-owner="alex"><button id="alex-record" disabled class="voice-button" type="button" aria-label="Record voice note as Alex"><svg><use href="#i-mic"/></svg><span>Record</span></button><button id="alex-upload" disabled class="voice-button" type="button">Import audio</button><button id="alex-sample" disabled class="voice-button" type="button">Try voice</button><input id="alex-audio-file" type="file" accept="audio/*" hidden></div>
+        <form id="alex-composer" class="composer message-composer"><input id="alex-text" type="text" placeholder="Message via mesh" aria-label="Message from Alex" maxlength="16384" autocomplete="off"><button id="alex-send" disabled type="submit" class="composer-send" aria-label="Send message from Alex"><svg><use href="#i-arrow"/></svg></button></form><div id="alex-compose-status" class="compose-status" role="status" aria-live="polite"></div><div class="home-indicator"></div>
       </div></div>
       <div class="phone-footnote"><span class="person-avatar">A</span><span>Alex <span>at the trail junction</span></span></div>
     </section>
@@ -70,14 +72,15 @@
       <div class="phone"><div class="phone-edge"></div><div class="phone-screen">
         <div class="status-bar"><span>9:41</span><div class="island"></div><span class="device-status">▮▮▮ <span class="wifi">⌁</span><span class="battery"></span></span></div>
         <div class="chat-header"><svg class="back"><use href="#i-back"/></svg><div class="avatar alex-avatar">A</div><div><strong>Alex</strong><span><i></i>Off-grid · Radio connected</span></div><span class="chat-more">···</span></div>
-        <div class="chat-content recipient-content"><div class="chat-date">TODAY 9:41 AM</div>
+        <div class="chat-content recipient-content" id="sam-chat"><div class="chat-date">TODAY 9:41 AM</div>
           <div class="request-toolbar"><span id="selection-label"><svg><use href="#i-crop"/></svg>Select a section</span><button id="request-section" disabled>Request section <svg><use href="#i-arrow"/></svg></button></div>
           <div class="photo-bubble received-bubble"><div id="recipient-photo" class="recipient-photo"><div id="image-placeholder" class="image-placeholder"><svg><use href="#i-photo"/></svg><strong>Waiting for Alex’s photo</strong><span>The preview comes first.</span></div><img id="preview-image" alt="Low-resolution preview of the trail sign" hidden><div id="detail-tiles"></div><div id="crop-box" class="crop-box" role="slider" tabindex="0" aria-label="Crop selection. Drag to move; drag a corner to resize. Arrow keys move; Shift and arrows resize." aria-valuemin="0" aria-valuemax="100" aria-valuenow="34" hidden><i data-handle="nw"></i><i data-handle="ne"></i><i data-handle="sw"></i><i data-handle="se"></i><span id="crop-box-label">SELECTED SECTION</span></div></div><div class="received-caption"><span id="receiver-image-status">Photo incoming</span><span>9:41</span></div><p>Found it. Which way do we go?</p></div>
           <div class="detail-status" id="detail-status"><span class="detail-status-icon"><svg><use href="#i-crop"/></svg></span><div><strong id="receiver-status">Start with the preview</strong><span id="receiver-detail">Then choose the detail you need.</span></div></div>
           <div class="selection-help" id="selection-help"><div class="selection-demo"><span></span></div><strong>A clearer view, one section at a time.</strong><p>Drag the box over the sign.<br>Request that section in high definition.</p></div>
           <button id="another-section" class="another-section" hidden><svg><use href="#i-plus"/></svg>Choose another section</button>
         </div>
-        <div class="composer"><button class="composer-plus" aria-label="Image-only demo" disabled><svg><use href="#i-plus"/></svg></button><span>Message via mesh</span><span class="composer-send"><svg><use href="#i-arrow"/></svg></span></div><div class="home-indicator"></div>
+        <div class="message-tools" data-owner="sam"><button id="sam-record" disabled class="voice-button" type="button" aria-label="Record voice note as Sam"><svg><use href="#i-mic"/></svg><span>Record</span></button><button id="sam-upload" disabled class="voice-button" type="button">Import audio</button><button id="sam-sample" disabled class="voice-button" type="button">Try voice</button><input id="sam-audio-file" type="file" accept="audio/*" hidden></div>
+        <form id="sam-composer" class="composer message-composer"><input id="sam-text" type="text" placeholder="Message via mesh" aria-label="Message from Sam" maxlength="16384" autocomplete="off"><button id="sam-send" disabled type="submit" class="composer-send" aria-label="Send message from Sam"><svg><use href="#i-arrow"/></svg></button></form><div id="sam-compose-status" class="compose-status" role="status" aria-live="polite"></div><div class="home-indicator"></div>
       </div></div>
       <div class="phone-footnote"><span class="person-avatar sam-avatar">S</span><span>Sam <span>a few ridgelines away</span></span></div>
     </section>

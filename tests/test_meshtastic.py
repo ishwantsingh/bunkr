@@ -70,6 +70,20 @@ class MeshtasticTests(unittest.TestCase):
         self.assertGreater(sent.id, 0)
         self.assertEqual(self.received, [])
 
+    def test_text_and_voice_frames_use_actual_sdk_send_path(self):
+        fixtures = json.loads((FIXTURES.parent / 'messages/messages.json').read_text())
+        for sample in fixtures.values():
+            for wire in [sample['manifest'], *sample['packets'], sample['ack']]:
+                wire = bytes.fromhex(wire)
+                self.bridge.send(wire, 2)
+                message = self.interface._sendToRadio.call_args.args[0]
+                packet = mesh_pb2.ToRadio.FromString(message.SerializeToString()).packet
+                self.assertEqual(packet.decoded.payload, wire)
+                self.assertEqual(packet.decoded.portnum, PORT)
+                expected = mesh_pb2.MeshPacket.DEFAULT if wire[1] == 3 else mesh_pb2.MeshPacket.RESPONSE
+                self.assertEqual(packet.priority, expected)
+                self.assertFalse(packet.want_ack)
+
     def test_priority_maps_to_sdk_and_keeps_background_separate(self):
         request = (FIXTURES / 'crop.request.bin').read_bytes()
         self.assertEqual(packet_priority(request), mesh_pb2.MeshPacket.RESPONSE)

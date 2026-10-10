@@ -2,9 +2,9 @@
 
 **A photo arrives as a tiny preview. Tap the unreadable trail sign, and the network prioritizes that crop.**
 
-imageoverbt is an image-only, off-grid messaging concept for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
+imageoverbt is an off-grid messaging prototype for text, voice notes and recipient-directed images for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
 
-**Status:** Phase 1 media handling is implemented on `codex/media-handling`: local source retention, JPEG/WebP encoding, requested crops, bounded wire packets, restart-safe reconstruction and verified completion acknowledgments. A local interactive UI mock is available. The full firmware-backed mesh simulator and production app integration remain planned.
+**Status:** Text and voice notes now work in both phone UIs over the existing mock transport, including compression, playback, verification and receipt ACKs. See [text/voice setup and contract](docs/TEXT_VOICE.md). Phase 1 image handling is implemented on `codex/media-handling`: local source retention, JPEG/WebP encoding, requested crops, bounded wire packets, restart-safe reconstruction and verified completion acknowledgments. A local interactive UI mock is available. The full firmware-backed mesh simulator and production app integration remain planned.
 
 See the [architecture diagram and built-versus-planned breakdown](docs/ARCHITECTURE.md).
 
@@ -17,7 +17,9 @@ Meshtastic interoperability uses the official [Python SDK](https://github.com/me
 Run `python3 -m imageoverbt.ui_server` after installation and open
 [localhost:8765](http://127.0.0.1:8765). Two phone chats surround an animated
 five-node mesh. Drag the recipient’s crop box and click **Request section** to
-watch verified source detail arrive progressively. Loss, relay removal,
+watch verified source detail arrive progressively. Type messages on either phone,
+record/import a voice note, or click **Try voice** for a speech sample. Voice
+requires FFmpeg with libopus on the server. Loss, relay removal,
 disconnection, pause, reset and another-section requests are interactive.
 See [UI_MOCK.md](docs/UI_MOCK.md) for setup, controls and simulation limits.
 
@@ -103,7 +105,7 @@ Implemented media tests cover packet-size limits, exact reconstruction, corrupti
 
 ## Scope
 
-The initial product covers **photos, previews, and requested crops**. Text chat, voice notes, video, cloud services, and physical radio integration are outside this first implementation. Background full-image refinement is secondary to delivering the detail the recipient selects.
+The current prototype covers **text, voice notes, photos, previews, and requested crops**. Video, cloud services, and physical radio integration remain outside this implementation. Background full-image refinement is secondary to delivering the detail the recipient selects.
 
 ## References
 

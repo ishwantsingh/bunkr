@@ -8,10 +8,12 @@ for the CHRP Off-Grid Everything track. Start with the media contract, develop
 media handling and mesh simulation simultaneously on separate branches, then
 integrate the app. These are delivery phases, not three serial work periods.
 
-The first implementation is software only and image only: photos, previews,
-requested crops, and optional full-image detail. Text chat, voice notes, video,
-cloud services, generative reconstruction, and physical radio integration are
-outside this scope. This supersedes the earlier voice-and-image breakdown.
+The current implementation is software only and now covers images, text and voice
+notes. The text/voice extension includes formats, compression, display/playback and
+packet/ACK integration with the existing browser mock transport. See
+[TEXT_VOICE.md](docs/TEXT_VOICE.md). Video, cloud services, generative image
+reconstruction and physical radio integration remain outside this scope. Realistic
+mesh simulation and independent persistent endpoints remain unfinished.
 
 | Phase | Owner | Proposed branch | Demo result |
 |---|---|---|---|
