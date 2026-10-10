@@ -6,6 +6,8 @@ imageoverbt is an image-only, off-grid messaging concept for the **CHRP Track â€
 
 **Status:** Phase 1 media handling is implemented on `codex/media-handling`: local source retention, JPEG/WebP encoding, requested crops, bounded wire packets, restart-safe reconstruction and verified completion acknowledgments. A local interactive UI mock is available. The full firmware-backed mesh simulator and production app integration remain planned.
 
+See the [architecture diagram and built-versus-planned breakdown](docs/ARCHITECTURE.md).
+
 Run `python3 -m unittest discover -s tests -v` and `python3 -m imageoverbt.demo` after installing with `python3 -m pip install -e .`. The offline demo writes a real trail-sign comparison and measured codec results to `demo-output/`. See [the media contract and setup instructions](docs/MEDIA_CONTRACT.md).
 
 Meshtastic interoperability uses the official [Python SDK](https://github.com/meshtastic/python) and generated [protobuf definitions](https://github.com/meshtastic/protobufs). Install `python3 -m pip install -e ".[meshtastic]"` and run `python3 -m imageoverbt.meshtastic_transport` for an offline protocol check. Frames are capped at 220 bytes to leave room for the Meshtastic wrapper and encryption overhead. See [upstream integration and simulator handoff](docs/MESHTASTIC.md).
