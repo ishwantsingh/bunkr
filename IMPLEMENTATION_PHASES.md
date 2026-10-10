@@ -57,7 +57,7 @@ the evidence each endpoint actually has.
 
 **Owner:** Person 3
 
-**Branch:** `codex/media-handling`
+**Branch:** `media-handling`
 
 1. Retain the source photo locally and generate a tiny, independently decodable
    preview. Evaluate JPEG and WebP against measured byte budgets.
@@ -87,7 +87,7 @@ is not a prerequisite.
 
 **Owner:** Person 2
 
-**Branch:** `codex/mesh-simulation`
+**Branch:** `mesh-simulation`
 
 Begin immediately after the shared contract exists, using fixture packets and a
 stub crop producer while media handling develops.
@@ -125,7 +125,7 @@ fabricated countdown or success event.
 
 **Owner:** Person 1
 
-**Branch:** `codex/app-interface`
+**Branch:** `app-interface`
 
 Build an iPhone-style sender and recipient interface alongside the five-node map.
 Person 1 can prepare it against event fixtures during the parallel work.
