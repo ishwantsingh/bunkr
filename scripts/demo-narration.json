@@ -1,0 +1,8 @@
+[
+{"start":0,"end":8,"title":"bunkr / Off-grid messaging","text":"When the network goes down, bunkr keeps useful information moving. This prototype connects two phones through a five-node software mesh."},
+{"start":8,"end":17,"title":"01 / Send a tiny preview","text":"Richard sends a photo of a trail junction. Instead of pushing the entire original, bunkr sends a tiny preview across three radio hops."},
+{"start":17,"end":26,"title":"02 / Choose what matters","text":"Maya receives the image, but the sign is blurry. She opens the preview and selects just the sign: the detail she actually needs."},
+{"start":26,"end":35,"title":"03 / Request source detail","text":"One tap sends a compact request back through the mesh. The sender crops the original photo, and the requested detail takes priority."},
+{"start":35,"end":45,"title":"04 / Watch detail arrive","text":"Verified tiles arrive piece by piece, bringing the sign into focus while the rest stays blurry. This is real source detail, with no AI reconstruction."},
+{"start":45,"end":60,"title":"Useful information. Fewer bytes.","text":"Bunkr also supports text and compressed voice notes. The simulator exposes routes, packet loss, retries, and radio settings. Receipt confirmation requires a return acknowledgment. The goal: spend scarce bandwidth on the information that matters."}
+]

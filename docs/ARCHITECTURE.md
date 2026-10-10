@@ -5,25 +5,124 @@ and locally tested; it does not imply deployment or physical-radio validation.
 
 ## Architecture
 
-### Left-to-right delivery flow
+### Delivery, trust boundaries and failure modes
 
-**Start at the sender on the left; finish at the recipient on the right.**
-Text and voice now use the same packet/verification pipeline; see [TEXT_VOICE.md](TEXT_VOICE.md).
-Green boxes are built, including the imported software mesh. Amber marks the
-shared demo endpoint boundary. Blue boxes show the unfinished firmware and
-independent endpoint path.
+![Bunkr architecture: current delivery pipeline, privacy boundaries, proposed encrypted endpoints and failure modes](assets/architecture.png)
 
-![Left-to-right architecture with integrated software mesh and unfinished firmware path](assets/architecture.png)
+[Full-size PNG](assets/architecture.png) · [Editable Mermaid diagram](assets/architecture.mmd)
+· Regenerate the PNG with `python scripts/render_architecture.py` (requires Pillow).
+The PNG renderer and Mermaid are two maintained views of the same architecture;
+editing Mermaid alone does not regenerate the PNG.
 
-[Editable Mermaid source](assets/architecture.mmd) · Regenerate the image with
-`python scripts/render_architecture.py` (requires Pillow).
+Read the flow left to right. Text, voice and images share the binary
+packet/verification pipeline. A photo first delivers a tiny preview. A crop
+request returns **through the same mesh** before the sender generates six
+independently encoded detail tiles. Verified completion ACKs also return through
+the mesh; only their arrival and validation let the sender confirm receipt.
+See [TEXT_VOICE.md](TEXT_VOICE.md) for the text/voice contract.
 
+The diagram summarizes the implemented delivery flow, current privacy limits,
+proposed protections and key failure behavior. The detailed requirements follow.
+**The current demo does not implement end-to-end encryption (E2EE), encrypted
+storage, or cryptographic peer authentication.** CRC32 and SHA-256 provide
+corruption checks against the supplied manifest, not protection against an
+attacker who can replace the manifest, payload and ACK.
 
-The numbered solid arrows are the forward delivery sequence. Return
-arrows summarize control messages: they cross the same mesh, rather than taking
-a direct phone-to-phone shortcut. The first pass delivers a tiny preview; after
-a crop request reaches the sender, the same pipeline delivers six independent
-detail tiles. Receipt confirmation waits for the verified completion ACK to return.
+### Current trust and privacy boundaries
+
+This is a shared local prototype, not two isolated phones. The Python server
+returns the encoded manifest and all data frames to one browser before the
+software mesh simulates their delivery. Both phone views and the network
+inspector share that session. The UI gates display on simulated delivery and
+verification, but this is **not a confidentiality boundary**. The source image
+endpoint is available to that shared session without recipient authorization.
+
+| Surface | What exists now | Privacy implication / remaining control |
+| --- | --- | --- |
+| Media processing | Local Python image and text codecs; local FFmpeg Opus encoding; browser decoding. No cloud service is part of the media path. | Sending fewer pixels reduces transmitted content, but a preview, voice note or selected crop may still contain sensitive information. |
+| Browser ↔ API | Plain HTTP bound to `127.0.0.1`; no API authentication or explicit Origin/Host authorization checks. `Cache-Control: no-store` is sent. | Loopback limits direct remote access; it does not isolate users, views, or local software. No TLS or endpoint authorization is implemented. |
+| Browser memory | Original upload/recording, packet bytes, reconstructed media, object URLs and transfer progress. | Page reload loses receive progress. The shared inspector can see application bytes and the simulated network; it is not a recipient-only view. |
+| Local database | Plain SQLite stores retained source pixels, encodings, manifests, chunks/completions, outgoing messages and receipt state. | No application-level at-rest encryption. The UI database uses a temporary directory removed on normal shutdown; deletion is not secure erasure, and abrupt termination may leave artifacts. |
+| Photo metadata | Import applies EXIF orientation, converts to RGB and writes a fresh PNG; outbound JPEG/WebP representations are re-encoded without copying EXIF. | GPS/EXIF is not deliberately forwarded by these paths. This is not a comprehensive anonymization guarantee: scene content, signs, faces and other pixel information remain. |
+| Application frames | CRC32 per frame, SHA-256 per representation, explicit IDs, bounds, endpoints and chunk indices. | Payloads and metadata are plaintext. Hashes and IDs do not prove sender identity; content-derived image IDs may permit correlation of identical retained pixel data. |
+| Meshtastic adapter | Optional official protobuf wrapping, radio-envelope checks and an SDK send/receive bridge tested offline. | Reserving encryption bytes or setting the SDK PKI option does not encrypt the software demo. Connected-device keys, settings and actual protection are not validated here. |
+| Logs / retention | The standard HTTP handler logs requests; the simulator emits events. No privacy retention policy is implemented. | URLs can include image IDs. Define log redaction, retention, export, backup and deletion rules before deployment. |
+
+Evidence: [local API and temporary database](../bunkr/ui_server.py),
+[retained images and storage](../bunkr/media.py),
+[text/voice processing](../bunkr/messages.py),
+[browser runtime](../chatterbot/src/mesh/runtime.mjs),
+[frame definitions](../bunkr/contract.py), and
+[SDK boundary](../bunkr/meshtastic_transport.py).
+
+### Proposed private endpoint architecture — not implemented
+
+The proposed privacy controls are design requirements, not a claim of current protection.
+Independent sender and recipient devices should own their databases, source
+media, receive state and keys. Relays should forward ciphertext; the recipient
+should authenticate and decrypt before trusting manifests, media or control
+messages. The SDK bridge exists; connecting it to firmware and independent
+persistent endpoints remains unfinished.
+
+1. **Identity and keys:** use a reviewed cryptographic protocol/library, verified
+   peer identities and OS-protected key storage. Define pairing, identity change
+   warnings, rotation, revocation, device loss and recovery. A node number alone
+   is not a verified identity. Shared-channel membership alone is not evidence
+   of exclusive sender-to-recipient confidentiality.
+2. **Authenticated encryption:** protect media **and** manifests, crop requests,
+   missing-chunk reports and completion ACKs. Bind endpoint identities, protocol
+   version, transfer/request IDs and chunk position to the authenticated context.
+   Ensure nonce uniqueness across retries and restarts; persist replay protection.
+   Reject unauthenticated requests before generating crops or changing state.
+3. **Packet budget:** account for nonce, tag and identity/session metadata before
+   fragmentation, and remeasure the actual upstream envelope. The existing
+   220-byte frame cap and 174-byte payload budget cannot simply absorb an added
+   application encryption layer without a revised contract or budget.
+4. **Durability and local privacy:** encrypt endpoint storage and protect keys
+   separately; persist receive chunks, outgoing queues, replay state and receipt
+   state atomically. Define expiry, storage quotas, deletion and backup behavior.
+   Keep source access restricted to its owner and separate inspector privileges
+   from ordinary messaging sessions. Define a protected host-to-radio connection
+   as well as the radio ciphertext boundary.
+5. **Residual visibility:** encryption cannot hide radio addressing, timing,
+   approximate sizes, activity or relay observations by itself. Endpoint compromise
+   exposes plaintext while in use; recipients can retain or copy decrypted media.
+   Local processing does not imply anonymity or secure deletion.
+
+Before claiming this design is private, test tampering, forged ACKs/requests,
+wrong-peer keys, replay across restarts, nonce reuse prevention, revocation,
+unauthorized source access, plaintext storage/log leakage and the final encrypted
+packet envelope against the actual transport. Those security controls and their
+acceptance tests are outstanding.
+
+### Failure modes and recovery
+
+| Failure | Current behavior / evidence | Remaining boundary |
+| --- | --- | --- |
+| Dropped packet or missing manifest | Per-hop retries and bounded application recovery; missing-frame requests cross the reverse mesh. | Defaults in `MediaNetwork`: five retry limit and three application recovery rounds. Exhaustion fails explicitly; it does not imply delivery. |
+| Relay goes offline / route changes | Range-aware routing can use an available alternate path; in-memory progress is retained during a running session. | A partition waits with unknown ETA. No durable expiry policy is implemented; a wait can persist until route restoration or cancellation/reset. |
+| Duplicate / out-of-order chunk | ID/index/count/length checks and deduplication; reconstruction orders chunks. Conflicting duplicate bytes are rejected. | Duplicate handling is not cryptographic replay protection. |
+| Corrupt bytes or invalid media | CRC, size, content hash and decoding checks prevent successful verification/ACK. Python image recovery discards accumulated chunks after final verification failure. | Browser verification errors surface as transfer failure; automatic durable restart is not integrated. |
+| Final ACK lost | Recipient may already display verified content. ACK travels through the same mesh and recovery path; sender stays unconfirmed until a matching ACK arrives. | A native hop/routing ACK never proves media completion. No authenticated ACKs exist yet. |
+| Reload, reset or server shutdown | Reset cancels old work; browser receive state is volatile. Normal UI server shutdown removes its temporary database. | Python stores support recovery with a retained database; durable browser/endpoint recovery is not wired into this demo. |
+| Bad or oversized upload / codec failure | Photo format, byte, pixel and animation checks reject unsupported inputs. Text/voice limits and FFmpeg timeout bound media handling. | Upload limits do not provide queue fairness, storage quotas or protection from all malicious inputs. |
+| API/storage failure | API errors or failed requests prevent completion; codecs cannot fabricate successful content. | No complete storage-full/crash recovery, transaction orchestration or operational alert policy is integrated. |
+| Congestion / sustained traffic | Packet priorities and bounded recovery exist in the model. | Fairness, backpressure, expiry, contention, duty-cycle modeling and erasure correction remain unfinished. |
+| Forged sender, crop request or ACK | Structural checks reject malformed frames; valid attacker-generated frames are not cryptographically authenticated. | Proposed peer authentication, E2EE, authorization and replay checks are required. |
+
+**Delivery invariants:** preview receipt is not full-image receipt; a tile is shown
+only after its own verification; recipient verification is distinct from sender
+confirmation; a disconnection has no reliable arrival countdown.
+
+Existing automated evidence is in [media tests](../tests/test_media.py),
+[message tests](../tests/test_messages.py),
+[API tests](../tests/test_ui_server.py),
+[photo import tests](../tests/test_photo_import.py),
+[network tests](../tests/ui/network.test.mjs),
+[protocol tests](../tests/ui/protocol.test.mjs),
+[runtime tests](../tests/ui/chatter-runtime.test.mjs) and
+[SDK tests](../tests/test_meshtastic.py). These validate local behavior, not
+firmware operation, RF performance or the proposed cryptographic design.
 
 ### Other demo boundaries to replace
 

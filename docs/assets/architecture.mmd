@@ -1,35 +1,23 @@
 flowchart LR
-    s["1 · SENDER PHONE UI<br/>Type / record / send photo<br/>Built UI; shared demo session"]
-    m["2 · LOCAL MEDIA ENGINE — BUILT<br/>Retain original in SQLite<br/>Encode text / Opus / image"]
-    w["3 · PACKETS — BUILT<br/>Media manifest + chunks<br/>220-byte frames / CRC / SHA-256<br/>Official Meshtastic protobuf wrapping"]
-    subgraph model["IMPORTED SOFTWARE MESH — BUILT"]
-        n["4 · Shared mesh engine<br/>A → B → C → D<br/>Range-based routing / loss<br/>Priority / retries / preset timing"]
-    end
-    v["5 · RECEIVER — BUILT<br/>Reassemble actual bytes<br/>Verify hash / decode each tile<br/>Receive progress currently in memory"]
-    r["6 · RECIPIENT PHONE UI<br/>Display blurry preview<br/>Select crop / Request section<br/>Show verified sharp tiles"]
+    sender["Sender<br/>Keep source locally<br/>Encode preview + media frames"]
+    mesh["Software mesh<br/>Route · prioritize · retry"]
+    recipient["Recipient<br/>Reassemble + verify<br/>Reveal detail + send receipt"]
+    sender -->|"Preview / detail"| mesh
+    mesh -->|"Media frames"| recipient
+    recipient -->|"Crop requests + verified receipts"| mesh
+    mesh -->|"Return control messages"| sender
 
-    s -->|"Text / voice / photo"| m
-    m -->|"Encoded media"| w
-    w -->|"Actual packet bytes"| n
-    n -->|"Delivered packets"| v
-    v -->|"Verified text / audio / pixels"| r
-    r -.->|"Crop request returns through mesh; then create detail"| m
-    v -.->|"Completion ACK returns through mesh; then confirm receipt"| s
+    classDef endpoint fill:#f6f8f6,stroke:#dce4df,color:#182824;
+    classDef relay fill:#ffffff,stroke:#32755c,color:#182824;
+    class sender,recipient endpoint;
+    class mesh relay;
 
-    subgraph actual["FUTURE FIRMWARE TRANSPORT — NOT YET CONNECTED"]
-        direction LR
-        q["Endpoint dispatcher + scheduler<br/>Browser priority and retries built<br/>Durable fairness / expiry NOT BUILT"]
-        b["Meshtastic SDK Bridge<br/>BUILT; offline tested"]
-        f["Meshtasticator firmware nodes<br/>Radio timing / loss / contention<br/>INTEGRATION NOT BUILT"]
-        p["Independent receiver endpoint<br/>Durable receive / ACK dispatch<br/>INTEGRATION NOT BUILT"]
-        q --> b --> f --> p
-    end
-    n ==>|"FUTURE FIRMWARE PATH"| q
-
-    classDef built fill:#e8f5ed,stroke:#26834a,color:#163c26;
-    classDef mock fill:#fff3d6,stroke:#b67b13,stroke-width:2px,color:#654507;
-    classDef planned fill:#eaf2ff,stroke:#4573b9,stroke-width:2px,stroke-dasharray:5 4,color:#203c63;
-    class s,m,w,n,v,r,b built;
-    class q,f,p planned;
-    style model fill:#e8f5ed,stroke:#26834a,stroke-width:3px
-    style actual fill:#f5f8ff,stroke:#4573b9,stroke-width:3px
+%% CURRENT DEMO: Both views share one browser, local API and temporary database.
+%% PRIVACY TODAY: Local processing; plaintext storage and packets. CRC/SHA-256
+%% detect corruption. No end-to-end encryption or cryptographic peer identity.
+%% PROPOSED: Verified identities; encrypted media, control messages and receipts;
+%% encrypted endpoint storage; ciphertext-only relays. Radio metadata stays visible.
+%% FAILURE MODES: Retry loss; alternate route where available; no route waits
+%% without ETA; retry exhaustion fails; lost receipt leaves sender unconfirmed;
+%% reload loses browser receive progress. Firmware integration is unfinished.
+%% See ARCHITECTURE.md for the full security and recovery requirements.

@@ -35,6 +35,13 @@ Prebuilt assets are included; running the server needs no Node.js or internet.
 To change the frontend, use Node.js 22.12+ (`npm ci` in `chatterbot/`, then
 `npm run build`). See [UI_MOCK.md](docs/UI_MOCK.md) for controls and model limits.
 
+## 60-second video demo
+
+The narrated Playwright walkthrough covers photo preview delivery, recipient-selected
+source detail, progressive tiles and mesh inspection. See [video and reproduction
+instructions](docs/DEMO_VIDEO.md). The generated MP4 is in
+`demo-output/bunkr-demo/bunkr-60-second-demo.mp4`.
+
 ## The use case
 
 A hiker photographs a trail junction and sends it to a friend several radio hops away. The photo contains two paths, trees, and a small trail sign. There is no cellular service or Wi-Fi.

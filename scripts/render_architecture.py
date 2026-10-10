@@ -1,74 +1,117 @@
-"""Render the documentation diagram with Pillow; no Mermaid extension required."""
+"""Render the concise architecture overview with Pillow; no browser required."""
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 SCALE = 2
-im = Image.new('RGB', (1800 * SCALE, 920 * SCALE), '#f8fafc')
+WIDTH, HEIGHT = 1600, 1120
+im = Image.new('RGB', (WIDTH*SCALE, HEIGHT*SCALE), '#ffffff')
 d = ImageDraw.Draw(im)
-font_path = '/System/Library/Fonts/Supplemental/Arial.ttf'
-if not Path(font_path).exists():
-    font_path = 'DejaVuSans.ttf'
+FONT_DIR = Path('/System/Library/Fonts/Supplemental')
+REGULAR = str(FONT_DIR / 'Arial.ttf') if (FONT_DIR / 'Arial.ttf').exists() else 'DejaVuSans.ttf'
+BOLD = str(FONT_DIR / 'Arial Bold.ttf') if (FONT_DIR / 'Arial Bold.ttf').exists() else 'DejaVuSans-Bold.ttf'
+INK, MUTED, RULE = '#182824', '#65716d', '#e3e8e5'
+GREEN, BLUE, AMBER = '#32755c', '#436fa1', '#926d32'
 
-def text(x, y, value, size=20, fill='#334155'):
-    font = ImageFont.truetype(font_path, size * SCALE)
-    d.text((x*SCALE, y*SCALE), value, font=font, fill=fill)
 
-def line(points, color='#64748b', width=2):
-    d.line([(x*SCALE,y*SCALE) for x,y in points], fill=color, width=width*SCALE)
+def text(x, y, value, size=22, color=INK, bold=False, center=False, max_width=None):
+    font = ImageFont.truetype(BOLD if bold else REGULAR, size*SCALE)
+    width = d.textlength(value, font=font)
+    if max_width is not None:
+        assert width <= max_width*SCALE, f'Text overflows: {value}'
+    if center:
+        x -= width / (2*SCALE)
+    d.text((x*SCALE, y*SCALE), value, font=font, fill=color)
 
-def arrow(points, color='#64748b', width=2):
-    line(points, color, width)
-    x,y = points[-1]; px,py = points[-2]
+
+def line(points, color=RULE, width=2):
+    d.line([(x*SCALE, y*SCALE) for x, y in points], fill=color, width=width*SCALE)
+
+
+def arrow(points, color=GREEN):
+    line(points, color)
+    x, y = points[-1]
+    px, py = points[-2]
     if x != px:
-        k = 1 if x>px else -1
-        line([(x-k*9,y-6),(x,y),(x-k*9,y+6)],color,width)
+        k = 1 if x > px else -1
+        line([(x-k*8, y-5), (x, y), (x-k*8, y+5)], color)
     else:
-        k = 1 if y>py else -1
-        line([(x-6,y-k*9),(x,y),(x+6,y-k*9)],color,width)
+        k = 1 if y > py else -1
+        line([(x-5, y-k*8), (x, y), (x+5, y-k*8)], color)
 
-def box(x,y,w,h,title,body,status='built'):
-    fill,stroke = {'built':('#e8f5ed','#26834a'),'mock':('#fff3d6','#b67b13'),'planned':('#eaf2ff','#4573b9')}[status]
-    d.rounded_rectangle((x*SCALE,y*SCALE,(x+w)*SCALE,(y+h)*SCALE),radius=14*SCALE,fill=fill,outline=stroke,width=2*SCALE)
-    text(x+16,y+18,title,22,'#172b42')
-    for i,s in enumerate(body): text(x+16,y+60+i*29,s,19)
 
-def boundary(x,y,w,h,label,color):
-    d.rounded_rectangle((x*SCALE,y*SCALE,(x+w)*SCALE,(y+h)*SCALE),radius=18*SCALE,outline=color,width=3*SCALE)
-    text(x+18,y+14,label,19,color)
+def endpoint(x, number, title, subtitle, lines):
+    d.rounded_rectangle((x*SCALE, 280*SCALE, (x+380)*SCALE, 520*SCALE),
+                        radius=16*SCALE, fill='#f6f8f6', outline=RULE, width=SCALE)
+    text(x+28, 305, number, 17, GREEN, bold=True)
+    text(x+28, 344, title, 30, bold=True)
+    text(x+28, 389, subtitle, 21, MUTED, max_width=324)
+    for i, value in enumerate(lines):
+        text(x+28, 441+i*30, value, 21, max_width=324)
 
-text(40,25,'Bunkr | text, voice and image delivery',34,'#13253b')
-text(40,77,'LEFT TO RIGHT: encode locally, send actual packet bytes, verify on receipt, then display text / play voice / reveal detail.',22)
-text(40,120,'GREEN = built     AMBER = demo boundary     BLUE = planned integration',19)
-xs=[40,330,620,910,1200,1490]
-items=[
- ('1  Sender UI',['Type / record / send photo','Built chat interaction','Shared demo session'],'built'),
- ('2  Media engine',['Store source and messages','Text / Opus / image codecs','Local Python API'],'built'),
- ('3  Packet encoding',['220-byte binary frames','CRC + SHA-256 metadata','Official protobuf wrapping'],'built'),
- ('4  Software mesh',['Range-aware routing / loss','Priority + bounded recovery','Preset time / byte accounting'],'built'),
- ('5  Receive + verify',['Reassemble actual bytes','Check hash and decode','Decode text / audio / tiles'],'built'),
- ('6  Recipient UI',['Read text / play voice','Select / Request section','Reveal verified image tiles'],'built')]
-for x,(title,body,status) in zip(xs,items): box(x,220,260,190,title,body,status)
-boundary(898,166,284,258,'IMPORTED MESH ENGINE', '#26834a')
-for x in xs[:-1]: arrow([(x+260,315),(x+290,315)])
-text(42,185,'START',18,'#26834a');text(1492,185,'END: VERIFIED CONTENT',18,'#26834a')
-# Reverse control messages, with explicit mesh traversal.
-arrow([(1620,410),(1620,465),(460,465),(460,410)],'#64748b')
-text(530,437,'Crop request via mesh: create selected detail',20)
-arrow([(1330,410),(1330,522),(170,522),(170,410)],'#64748b')
-text(305,494,'Verified completion ACK returns through the mesh; sender then confirms receipt',20)
-arrow([(1040,424),(1040,587)],'#4573b9',3)
-text(1060,548,'FUTURE FIRMWARE TRANSPORT PATH',18,'#4573b9')
-boundary(306,587,1454,246,'FUTURE FIRMWARE PATH — END-TO-END INTEGRATION NOT BUILT', '#4573b9')
-future=[
- (330,'Endpoint scheduler',['PARTIAL: browser queue','Add fairness / expiry','Durable dispatch needed'],'planned'),
- (690,'Meshtastic SDK Bridge',['BUILT / OFFLINE TESTED','Send and receive adapter','Connected interface needed'],'built'),
- (1050,'Meshtasticator nodes',['NOT INTEGRATED','Native firmware + TCP','Radio-model behavior'],'planned'),
- (1410,'Independent receiver',['NOT INTEGRATED','Durable receive state','Verification + ACK dispatch'],'planned')]
-for x,title,body,status in future: box(x,636,326,174,title,body,status)
-for x in [330,690,1050]: arrow([(x+326,723),(x+360,723)],'#4573b9')
-text(40,860,'KEEP: media engine, wire format, verification, SQLite recovery, SDK adapter, and crop-selection UI.',21)
-boundary(28,842,1744,72,'', '#b67b13')
-text(40,892,'DEMO BOUNDARY: replace shared browser sessions and temporary state with independent, persistent endpoints.',18)
-im.save(ROOT/'docs/assets/architecture.png')
-print('Rendered docs/assets/architecture.png')
+
+text(80, 54, 'BUNKR  /  ARCHITECTURE', 17, GREEN, bold=True)
+text(80, 99, 'A little first. The detail you need next.', 46, bold=True)
+text(80, 166, 'Local text, voice and photos. Recipient-directed delivery over a mesh.', 24, MUTED)
+line([(80, 224), (1520, 224)])
+
+endpoint(80, '01  /  PREPARE', 'Sender', 'Keep the source locally.', [
+    'Encode a tiny preview.', 'Packetize media (220 B max).',
+])
+endpoint(1140, '03  /  VERIFY', 'Recipient', 'Reassemble and check integrity.', [
+    'Reveal each verified detail tile.', 'Send a completion receipt.',
+])
+text(800, 305, '02  /  RELAY', 17, GREEN, bold=True, center=True)
+text(800, 344, 'Software mesh', 30, bold=True, center=True)
+# A minimal network glyph: route plus two alternate relays.
+nodes = [(660, 425), (800, 425), (940, 425), (800, 390), (800, 460)]
+for a, b in [(0,1), (1,2), (0,3), (3,2), (0,4), (4,2)]:
+    line([nodes[a], nodes[b]], '#d5e1d9', 2)
+line([nodes[0], nodes[1], nodes[2]], GREEN, 3)
+for i, (x,y) in enumerate(nodes):
+    radius = 8 if i < 3 else 5
+    d.ellipse(((x-radius)*SCALE, (y-radius)*SCALE,
+               (x+radius)*SCALE, (y+radius)*SCALE),
+              fill=GREEN if i < 3 else '#a3b9ab')
+text(800, 493, 'Route · prioritize · retry', 21, MUTED, center=True)
+arrow([(460, 425), (642, 425)])
+arrow([(958, 425), (1140, 425)])
+text(550, 390, 'Preview / detail', 17, MUTED, center=True)
+text(1049, 390, 'Media frames', 17, MUTED, center=True)
+
+arrow([(1330, 520), (1330, 580), (270, 580), (270, 520)])
+d.rectangle((465*SCALE, 563*SCALE, 1135*SCALE, 598*SCALE), fill='#ffffff')
+text(800, 566, 'Crop requests + verified receipts return through the same mesh',
+     21, GREEN, center=True)
+text(800, 623, 'Current demo: both views share one browser, local API and temporary database.',
+     21, MUTED, center=True)
+line([(80, 682), (1520, 682)])
+
+text(80, 719, 'Privacy', 28, bold=True)
+text(880, 719, 'When things fail', 28, bold=True)
+text(80, 770, 'TODAY', 15, AMBER, bold=True)
+text(80, 801, 'Local processing. Plaintext storage and packets.', 23, max_width=700)
+text(80, 833, 'CRC + SHA-256 check corruption; no end-to-end encryption.', 21, MUTED, max_width=700)
+text(80, 889, 'PROPOSED', 15, BLUE, bold=True)
+text(80, 920, 'Verified identities, encrypted media and receipts.', 23, max_width=700)
+text(80, 952, 'Encrypted device storage. Relays carry only ciphertext.', 21, MUTED, max_width=700)
+text(80, 995, 'Radio timing, size and addresses would still be visible.', 19, MUTED, max_width=700)
+
+failures = [
+    ('Packet loss', 'Retry missing frames; use an alternate route.'),
+    ('No route', 'Wait for a route; arrival time is unknown.'),
+    ('Lost receipt', 'Recipient has content; sender stays unconfirmed.'),
+    ('Reload', 'Demo receive progress is lost.'),
+]
+for y, (label, description) in zip([775, 840, 905, 970], failures):
+    text(880, y, label, 21, bold=True, max_width=620)
+    text(880, y+28, description, 20, MUTED, max_width=620)
+
+line([(80, 1050), (1520, 1050)])
+text(80, 1073, 'Software prototype · firmware integration and proposed security remain unfinished.', 18, MUTED)
+text(1520, 1073, 'bunkr', 18, GREEN, bold=True, center=False)
+
+out = ROOT / 'docs/assets/architecture.png'
+out.parent.mkdir(parents=True, exist_ok=True)
+im.save(out)
+print(f'Rendered {out.relative_to(ROOT)} ({im.width} x {im.height})')
