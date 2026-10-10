@@ -23,6 +23,34 @@ source crops sharpen the selected region as each passes CRC, SHA-256, decoding
 and dimensions checks. Previously verified sections remain visible. Arrow keys
 move the box; Shift+arrows resize it.
 
+### Import a photo
+
+Click **Upload photo** on the sender, select a JPG, PNG, WebP or HEIC/HEIF file,
+then click **Send photo**. Import prepares the source and preview locally; it does
+not deliver anything to the recipient. The preview, section requests, detail tiles
+and completion ACKs still cross the same mesh. Photo selection preserves existing
+text/voice chat and clears the previous image's received detail and receipts.
+
+The local upload endpoint accepts at most **12 MiB / 50 megapixels**. It checks the
+actual image content, rejects corrupt or animated files, applies EXIF orientation
+and retains an orientation-corrected lossless source. Portrait and landscape photos
+keep their aspect ratio. The local sender display uses a JPEG thumbnail; crops
+always come from the retained source, not that thumbnail or the transmitted preview.
+
+Invalid imports leave the current photo intact. Reset cancels an in-flight import;
+late upload results cannot replace the current photo. Every crop request identifies
+its source explicitly. Reset keeps a successfully imported photo selected; a page
+reload returns to the configured sample. Imported files live only in the demo's
+temporary local database, which is removed when the server stops.
+
+`POST /api/photo` accepts raw image bytes and returns the normal media demo envelope
+plus an immutable `image_id` and `source_url`. `POST /api/crop` accepts `image_id`
+with its bounds and request ID. `GET /api/source.jpg?image_id=…` serves that source's
+browser thumbnail. Filename text stays in the browser and is never used as a path.
+HEIC decoding uses the [Pillow HEIF plugin](https://pillow-heif.readthedocs.io/en/stable/pillow-plugin.html),
+installed with the application's dependencies. Reinstall with `pip install -e .`
+when updating an existing environment.
+
 Both phones can send text and compressed Opus voice. The recipient displays or
 plays only verified content. The sender confirms receipt only after the matching
 application ACK crosses the mesh back to the sender and is validated by the API.

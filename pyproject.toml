@@ -7,7 +7,7 @@ name = "imageoverbt"
 version = "0.1.0"
 description = "Off-grid text, voice and recipient-directed image delivery"
 requires-python = ">=3.11"
-dependencies = ["Pillow>=12.3,<13"]
+dependencies = ["Pillow>=12.3,<13", "pillow-heif>=1.1,<2"]
 
 [project.optional-dependencies]
 meshtastic = ["meshtastic==2.7.11"]
@@ -21,4 +21,4 @@ imageoverbt-ui = "imageoverbt.ui_server:main"
 include = ["imageoverbt*"]
 
 [tool.setuptools.package-data]
-imageoverbt = ["ui/*.html", "ui/*.css", "ui/*.mjs", "ui/mesh/*.mjs"]
+imageoverbt = ["ui/*.html", "ui/*.css", "ui/*.mjs", "ui/mesh/*.mjs", "ui/mesh/*.css"]

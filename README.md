@@ -16,7 +16,8 @@ Meshtastic interoperability uses the official [Python SDK](https://github.com/me
 
 Run `python3 -m imageoverbt.ui_server` after installation and open
 [localhost:8765](http://127.0.0.1:8765). Two phone chats surround an animated
-five-node mesh. Drag the recipient’s crop box and click **Request section** to
+five-node mesh. Use **Upload photo** on the sender to import JPG, PNG, WebP or
+iPhone HEIC photos, then **Send photo**. Drag the recipient’s crop box and click **Request section** to
 watch verified source detail arrive progressively. Type messages on either phone,
 record/import a voice note, or click **Try voice** for a speech sample. Voice
 requires FFmpeg with libopus on the server. Loss, relay removal,

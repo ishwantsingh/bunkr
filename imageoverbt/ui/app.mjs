@@ -1,23 +1,17 @@
 import {parseManifest, Reassembler, makeAck, makeRequest, clampBounds, fromHex, validate} from './protocol.mjs';
 import {mountMessages} from './messages.mjs';
-import {Network, RADIO_PRESETS} from './network.mjs';
+import {mountPhotoImport} from './photos.mjs';
+import {Network} from './network.mjs';
+import {mountMeshPanel} from './mesh/panel.mjs';
 
 const $ = id => document.getElementById(id);
-const svgNS='http://www.w3.org/2000/svg';
 let network=new Network(), demo=null, transfer=null, busy=false, previewReady=false, generation=0;
 let bounds=[.18,.25,.84,.59], speed=1, tickBusy=false, autoStart=null;
 const objectURLs=new Set();
-let messages;
-function setBusy(value){busy=value;messages?.controls();}
+let messages,photos,panel;
+function setBusy(value){busy=value;if(messages)messages.controls();else photos?.controls();panel?.render();}
 const icon=(id)=>`<svg><use href="#i-${id}"/></svg>`;
-function svgElement(tag,attrs={}) {const el=document.createElementNS(svgNS,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);return el;}
-function event(text,type='normal',elapsed=network.time) {
-  $('timeline-empty').hidden=true;
-  const li=document.createElement('li');li.className=type;
-  const time=document.createElement('time');time.textContent=`+${Math.floor(elapsed/60)}:${(elapsed%60).toFixed(1).padStart(4,'0')}`;
-  const dot=document.createElement('i'),span=document.createElement('span');span.textContent=text;
-  li.append(time,dot,span);$('events').prepend(li);while($('events').children.length>6)$('events').lastChild.remove();
-}
+function event(text,type='normal',elapsed=network.time){panel?.log(text,type,elapsed);}
 function toast(message) {$('toast').textContent=message;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,5000);}
 async function api(path,payload) {
   const response=await fetch(path,payload===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -29,66 +23,23 @@ function step(n,done=false){for(let i=1;i<=3;i++){$(`step-${['one','two','three'
 function senderStatus(title,detail,active=false,complete=false){$('sender-status').textContent=title;$('sender-detail').textContent=detail;$('sender-note-dot').className=`note-dot${active?' active':''}${complete?' complete':''}`;}
 function recipientStatus(title,detail){$('receiver-status').textContent=title;$('receiver-detail').textContent=detail;}
 function selection(){bounds=clampBounds(bounds);const [l,t,r,b]=bounds;Object.assign($('crop-box').style,{left:`${l*100}%`,top:`${t*100}%`,width:`${(r-l)*100}%`,height:`${(b-t)*100}%`});$('crop-box').setAttribute('aria-valuenow',Math.round((r-l)*100));$('crop-box').setAttribute('aria-valuetext',`${Math.round((r-l)*100)}% wide, ${Math.round((b-t)*100)}% high`);}
-function graph(){
-  const path=network.getRoute(),NODES=network.positions,LINKS=network.links;
-  $('mesh-links').replaceChildren();
-  for(const [a,b] of LINKS){const active=path?.some((n,i)=>n===a&&path[i+1]===b||n===b&&path[i+1]===a);const off=!network.enabled.has(a)||!network.enabled.has(b);$('mesh-links').append(svgElement('line',{x1:NODES[a][0],y1:NODES[a][1],x2:NODES[b][0],y2:NODES[b][1],class:`mesh-link${active?' active':''}${off?' disabled':''}`}));}
-  $('mesh-nodes').replaceChildren();
-  for(const [name,[x,y]] of Object.entries(NODES)){
-    const endpoint=['A','D'].includes(name),g=svgElement('g',{class:`node${endpoint?' endpoint':''}${network.enabled.has(name)?'':' offline'}`,transform:`translate(${x} ${y})`,...(endpoint?{}:{role:'button',tabindex:'0','aria-label':`Toggle relay ${name}`,'aria-pressed':String(network.enabled.has(name))})});
-    g.append(svgElement('circle',{class:'halo',r:30}),svgElement('circle',{class:'disc',r:20}));
-    const label=svgElement('text',{class:'letter'});label.textContent=name;g.append(label);
-    const caption=svgElement('text',{class:'node-caption',y:36});caption.textContent=name==='A'?'Alex · Sender':name==='D'?'Sam · Recipient':network.enabled.has(name)?'Relay':'Offline';g.append(caption);
-    const role=svgElement('text',{class:'node-role',y:48});role.textContent=name==='A'?'SOURCE PHOTO':name==='D'?'SELECTED DETAIL':name==='E'?'ALTERNATE PATH':'';g.append(role);
-    if(!endpoint){g.addEventListener('click',()=>toggleRelay(name));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleRelay(name);}});}
-    $('mesh-nodes').append(g);
-  }
-  $('route-label').textContent=path?path.join(' → '):'No available route';
-  $('hop-metric').innerHTML=path?`${path.length-1} <small>hops</small>`:'— <small>unknown</small>';
-  $('connection').classList.toggle('offline',!network.online);$('connection').setAttribute('aria-pressed',String(network.online));$('connection').querySelector('span').textContent=network.online?'Network online':'Disconnected';
-  const cOffline=!network.enabled.has('C');$('relay-toggle').textContent=cOffline?'Restore C':'Take C offline';$('relay-toggle').setAttribute('aria-pressed',String(cOffline));
-}
-function toggleRelay(name){if(network.enabled.has(name))network.enabled.delete(name);else network.enabled.add(name);event(`Relay ${name} ${network.enabled.has(name)?'restored':'offline'} · received chunks retained`,network.enabled.has(name)?'normal':'loss');graph();}
-function animateHop(result){
-  const positions=network.positions,a=positions[result.from],b=positions[result.to];if(!a||!b)return;
-  $('mesh-packets').replaceChildren();
-  for(let index=0;index<3;index++){
-    const circle=svgElement('circle',{r:index===0?5:3,class:`moving-packet${transfer?.reverse?' request':''}`});
-    $('mesh-packets').append(circle);
-    const motion=svgElement('animateMotion',{dur:`${.26/speed}s`,begin:`${index*.03/speed}s`,path:`M${a[0]},${a[1]} L${b[0]},${b[1]}`,fill:'freeze'});circle.append(motion);motion.beginElement();
-    setTimeout(()=>circle.remove(),400/speed);
-  }
-  if(result.dropped.length){const lost=svgElement('circle',{cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2+12,r:4,class:'moving-packet lost'});$('mesh-packets').append(lost);setTimeout(()=>lost.remove(),500/speed);}
-}
 function metrics(){
-  $('mesh-accounting').textContent=`${network.bytes.toLocaleString()} radio B · ${network.airtime.toFixed(1)}s modeled airtime · +${network.time.toFixed(1)}s simulation`;
-  $('retry-metric').innerHTML=`${network.retries} <small>attempts</small>`;
-  if(transfer){const count=transfer.received;const total=transfer.total;$('packet-count').innerHTML=`${count} <small>/ ${total} packets</small>`;$('progress-fill').style.width=`${count/total*100}%`;$('progress-label').textContent=transfer.label;}
+  if(transfer){$('packet-count').textContent=`${transfer.received} / ${transfer.total} packets`;$('progress-label').textContent=transfer.label;}
+  panel?.render();
 }
 function runFrames(frames,{label,reverse=false,onFrame=async()=>{},onState=()=>{}}){
   if(transfer)throw Error('A transfer is already active');
   return new Promise((resolve,reject)=>{transfer={resolve,reject,label,reverse,onFrame,total:frames.length,received:0,generation,onState};try{network.enqueue(frames,reverse);metrics();}catch(error){transfer=null;reject(error);}});
 }
-async function tick(){
+async function tick({singleEvent=false}={}){
   if(tickBusy||!transfer)return;tickBusy=true;
   const current=transfer;
   try{
-    const result=await network.advance({seconds:8*speed});
+    const result=await network.advance({seconds:8*speed,singleEvent});
     guard(current.generation);
     current.onState?.(result.state);
-    $('map-state').hidden=!['waiting','paused'].includes(result.state);
-    if(result.state==='waiting'||result.state==='paused'){
-      $('map-state').querySelector('strong').textContent=result.state==='paused'?'Simulation paused':'Waiting for a route';
-      $('map-state').querySelector('span').textContent='Received progress is retained in this session.';
-    }
-    if(result.hops.length){const hop=result.hops.at(-1);animateHop({...hop,dropped:result.dropped});}
-    for(const item of result.events){
-      if(item.type==='tx_started')event(`${item.packetType} · ${item.from} → ${item.to} · ${item.wireBytes} radio B`,'normal',item.time);
-      else if(item.type==='hop_lost')event(`Lost ${item.from} → ${item.to} · hop retry`,'loss',item.time);
-      else if(item.type==='recovery_timeout')event(`Recovery timeout · missing/control retry round ${item.round}`,'loss',item.time);
-    }
     for(const frame of result.received){await current.onFrame(frame);guard(current.generation);current.received++;}
-    metrics();graph();
+    metrics();
     if(result.failed.length)throw Error('Mesh recovery limit reached. Retry the message or resend the photo.');
     if(current.received===current.total&&transfer===current){transfer=null;current.resolve();}
   }catch(error){if(transfer===current){transfer=null;network.cancel();current.reject(error);}}
@@ -101,7 +52,7 @@ async function decodeVerified(reassembler){
   const blob=new Blob([bytes],{type:m.codec===1?'image/webp':'image/jpeg'});
   const bitmap=await createImageBitmap(blob);
   try{if(bitmap.width!==m.width||bitmap.height!==m.height)throw Error('Decoded image dimensions do not match manifest');}finally{bitmap.close();}
-  const url=URL.createObjectURL(blob);objectURLs.add(url);return url;
+  const url=URL.createObjectURL(blob);objectURLs.add(url);network.markVerified(m.id,url);return url;
 }
 async function sendPhoto(){
   if(busy||!demo)return;const version=generation;setBusy(true);
@@ -119,7 +70,7 @@ async function sendPhoto(){
     $('receiver-image-status').textContent=`PREVIEW ONLY · ${m.bytes} B`;
     recipientStatus('Preview received','Drag the box. Request only what matters.');event('Preview verified on D · crop selection enabled','verified');
     await runFrames([{wire:makeAck(m)}],{label:'Confirming preview',reverse:true});guard(version);
-    await api('/api/confirm',{acks:[makeAck(m)]});guard(version);
+    const confirmed=await api('/api/confirm',{acks:[makeAck(m)]});guard(version);if(!confirmed.confirmed)throw Error('Sender confirmation failed');network.markConfirmed(m.id);
     senderStatus('Preview receipt confirmed','Full-resolution photo retained locally.',false,true);$('sender-ticks').textContent='✓✓';
     $('request-section').disabled=false;$('send-photo').innerHTML=icon('reset')+'Send again';step(2);
     $('progress-label').textContent='Preview delivered';$('packet-count').innerHTML=`${m.count+1} <small>/ ${m.count+1} packets</small>`;
@@ -140,7 +91,7 @@ async function requestSection(){
     await runFrames([{wire:requestWire}],{label:'Request → sender',reverse:true});guard(version);
     event('Request reached A · selected detail takes priority');$('local-reply').hidden=false;
     senderStatus('Sending requested section','Extracting pixels from the original photo.',true);
-    const response=await api('/api/crop',{bounds:selected,request_id:requestId});guard(version);
+    const response=await api('/api/crop',{image_id:demo.image_id,bounds:selected,request_id:requestId});guard(version);
     const reps=response.tiles.map(rep=>({wire:rep,manifest:parseManifest(rep.manifest),assembler:new Reassembler(parseManifest(rep.manifest)),registered:false,revealed:false}));
     let revealed=0;
     recipientStatus('Selected detail is arriving','0 of 6 pieces verified. The rest stays blurry.');$('crop-box-label').textContent='DETAIL ARRIVING';
@@ -163,6 +114,7 @@ async function requestSection(){
     const acks=reps.map(rep=>makeAck(rep.manifest));
     await runFrames(acks.map(wire=>({wire})),{label:'Confirming receipt',reverse:true});guard(version);
     const confirmed=await api('/api/confirm',{acks});guard(version);if(!confirmed.confirmed)throw Error('Sender confirmation failed');
+    for(const rep of reps)network.markConfirmed(rep.manifest.id);
     senderStatus('Section receipt confirmed','Only the detail Sam requested was sent.',false,true);
     const packetTotal=reps.reduce((sum,rep)=>sum+rep.manifest.count+1,0);
     $('progress-label').textContent='Selected detail delivered';$('packet-count').innerHTML=`${packetTotal} <small>/ ${packetTotal} packets</small>`;
@@ -172,17 +124,41 @@ async function requestSection(){
   }catch(error){if(error.name!=='AbortError'){toast(error.message);recipientStatus('Detail transfer stopped',error.message);$('crop-box').classList.remove('locked');$('request-section').disabled=false;}}
   finally{if(version===generation){setBusy(false);$('send-photo').disabled=false;}}
 }
+function photoGeometry(){
+  const m=parseManifest(demo.preview.manifest),aspect=`${m.sourceWidth} / ${m.sourceHeight}`;
+  $('source-image').parentElement.style.aspectRatio=aspect;
+  $('recipient-photo').style.aspectRatio=aspect;
+}
+function applyPhoto(response,name){
+  network.representations.clear();network.activeRepresentations=[];panel?.clearTransfer();
+  demo=response;previewReady=false;bounds=[...demo.default_bounds];
+  photoGeometry();
+  $('source-image').src=demo.source_url;$('source-image').alt=`Original photo: ${name}`;
+  $('photo-file-name').textContent=name;$('photo-file-name').title=name;
+  $('source-caption').textContent='Photo';$('receiver-caption').textContent='';
+  $('sender-ticks').textContent='';$('detail-tiles').replaceChildren();
+  $('preview-image').hidden=true;$('preview-image').removeAttribute('src');
+  $('image-placeholder').hidden=false;$('crop-box').hidden=true;$('crop-box').classList.remove('locked');
+  $('local-reply').hidden=true;$('another-section').hidden=true;$('selection-help').hidden=false;
+  $('request-section').disabled=true;$('send-photo').innerHTML=icon('arrow')+'Send photo';
+  $('receiver-image-status').textContent='Waiting for photo';$('progress-label').textContent='Photo ready to send';
+  $('packet-count').innerHTML='0 <small>/ 0 packets</small>';
+  senderStatus('Photo ready to send','Original stays on this phone.');
+  recipientStatus('Waiting for the preview','Nothing has arrived yet.');
+  $('network-subtitle').textContent='Send the preview, then choose the detail you need.';
+  $('alex-chat').scrollTop=0;step(1);
+  event('New photo prepared at A · not sent yet');
+}
 function reset(){
-  generation++;messages?.reset();drag=null;clearTimeout(autoStart);if(transfer){transfer.reject(cancelError());transfer=null;}
-  network=new Network({loss:Number($('loss').value)/100,preset:$('radio-preset').value});previewReady=false;setBusy(false);
+  generation++;photos?.reset();messages?.reset();drag=null;clearTimeout(autoStart);if(transfer){transfer.reject(cancelError());transfer=null;}
+  network=new Network({loss:Number($('lossRange').value)/100,preset:$('presetSelect').value,seed:Number($('seedInput').value)||16});previewReady=false;setBusy(false);
   for(const url of objectURLs)URL.revokeObjectURL(url);objectURLs.clear();
-  $('events').replaceChildren();$('timeline-empty').hidden=false;$('detail-tiles').replaceChildren();$('mesh-packets').replaceChildren();
-  $('map-state').hidden=true;$('crop-box').hidden=true;$('preview-image').hidden=true;$('image-placeholder').hidden=false;$('local-reply').hidden=true;$('another-section').hidden=true;$('selection-help').hidden=false;
+  $('detail-tiles').replaceChildren();
+  $('crop-box').hidden=true;$('preview-image').hidden=true;$('image-placeholder').hidden=false;$('local-reply').hidden=true;$('another-section').hidden=true;$('selection-help').hidden=false;
   $('request-section').disabled=true;$('send-photo').disabled=!demo;$('send-photo').innerHTML=icon('arrow')+'Send photo';$('sender-ticks').textContent='✓';
-  $('receiver-image-status').textContent='Photo incoming';$('progress-label').textContent='Ready to send';$('packet-count').innerHTML='0 <small>/ 0 packets</small>';$('progress-fill').style.width='0%';$('retry-metric').innerHTML='0 <small>attempts</small>';metrics();
-  const node=network.simulator.nodes.find(n=>n.id===$('range-node').value);$('radio-range').value=node.range;$('range-value').textContent=node.range;
+  $('receiver-image-status').textContent='Photo incoming';$('progress-label').textContent='Ready to send';$('packet-count').innerHTML='0 <small>/ 0 packets</small>';
   senderStatus('Photo ready to send','Original stays on this phone.');recipientStatus('Start with the preview','Then choose the detail you need.');$('network-subtitle').textContent='A small preview goes first. You choose what follows.';
-  $('pause').innerHTML=icon('pause');$('pause').setAttribute('aria-label','Pause simulation');step(1);graph();
+  step(1);panel?.reset();
 }
 let drag=null;
 $('crop-box').addEventListener('pointerdown',e=>{
@@ -203,16 +179,13 @@ $('crop-box').addEventListener('keydown',e=>{
 });
 $('another-section').addEventListener('click',()=>{bounds=[.12,.08,.65,.44];selection();$('crop-box').classList.remove('locked');$('crop-box-label').textContent='SELECTED SECTION';$('another-section').hidden=true;$('request-section').disabled=false;recipientStatus('Choose another section','Drag the box. Previously received detail stays.');step(2);});
 $('send-photo').addEventListener('click',()=>{clearTimeout(autoStart);sendPhoto();});$('request-section').addEventListener('click',requestSection);$('reset').addEventListener('click',reset);
-$('connection').addEventListener('click',()=>{network.online=!network.online;event(network.online?'Network reconnected · resuming received progress':'Network disconnected · arrival time unknown',network.online?'normal':'loss');graph();});
-$('relay-toggle').addEventListener('click',()=>toggleRelay('C'));
-$('loss').addEventListener('input',()=>{network.loss=Number($('loss').value)/100;$('loss-value').textContent=$('loss').value+'%';$('loss-metric').innerHTML=$('loss').value+'<small>%</small>';});
-$('pause').addEventListener('click',()=>{network.paused=!network.paused;$('pause').innerHTML=icon(network.paused?'play':'pause');$('pause').setAttribute('aria-label',network.paused?'Resume simulation':'Pause simulation');if(!network.paused)$('map-state').hidden=true;});
-$('speed').addEventListener('click',()=>{speed=speed===1?2:speed===2?4:1;$('speed').textContent=(40*speed)+'×';});
-messages=mountMessages({api,runFrames,event,urls:objectURLs,isBusy:()=>busy,setBusy,generation:()=>generation,guard,cancelAutoStart:()=>clearTimeout(autoStart),composeBusy:disabled=>{$('send-photo').disabled=disabled||!demo;$('request-section').disabled=disabled||!previewReady||$('crop-box').classList.contains('locked');}});
-for(const preset of Object.keys(RADIO_PRESETS)){const option=document.createElement('option');option.value=preset;option.textContent=preset;$('radio-preset').append(option);}
-$('radio-preset').addEventListener('change',()=>{network.setPreset($('radio-preset').value);event(`Radio preset: ${network.preset}`);});
-$('range-node').addEventListener('change',()=>{const node=network.simulator.nodes.find(n=>n.id===$('range-node').value);$('radio-range').value=node.range;$('range-value').textContent=node.range;});
-$('radio-range').addEventListener('input',()=>{network.setNode($('range-node').value,{range:Number($('radio-range').value)});$('range-value').textContent=$('radio-range').value;graph();});
+messages=mountMessages({onVerified:m=>network.markVerified(m.id),onConfirmed:m=>network.markConfirmed(m.id),api,runFrames,event,urls:objectURLs,isBusy:()=>busy,setBusy,generation:()=>generation,guard,cancelAutoStart:()=>clearTimeout(autoStart),composeBusy:disabled=>{photos?.controls(disabled);$('send-photo').disabled=disabled||!demo;$('request-section').disabled=disabled||!previewReady||$('crop-box').classList.contains('locked');}});
+photos=mountPhotoImport({button:$('choose-photo'),input:$('photo-file'),status:$('photo-import-status'),
+  isBusy:()=>busy,setBusy,ready:()=>!!demo,generation:()=>generation,guard,
+  cancelAutoStart:()=>clearTimeout(autoStart),applyPhoto});
+panel=mountMeshPanel({network:()=>network,busy:()=>busy,canSend:()=>!!demo&&!busy,
+  canRequest:()=>previewReady&&!busy&&!$('crop-box').classList.contains('locked'),
+  sendPhoto:()=>{clearTimeout(autoStart);sendPhoto();},requestSection,step:()=>tick({singleEvent:true}),setSpeed:value=>speed=value,reset});
 reset();
-try{demo=await api('/api/demo');messages.ready(demo.voice_available);$('protocol-label').textContent=demo.transport;$('send-photo').disabled=false;autoStart=setTimeout(sendPhoto,700);}
+try{demo=await api('/api/demo');messages.ready(demo.voice_available);$('source-image').src=demo.source_url;photoGeometry();photos.controls();$('protocol-label').textContent=demo.transport;$('send-photo').disabled=false;panel.render();autoStart=setTimeout(sendPhoto,700);}
 catch(error){toast('Could not load the media demo: '+error.message);$('protocol-label').textContent='Media server unavailable';}
