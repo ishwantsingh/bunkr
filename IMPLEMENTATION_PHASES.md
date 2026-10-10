@@ -8,10 +8,12 @@ for the CHRP Off-Grid Everything track. Start with the media contract, develop
 media handling and mesh simulation simultaneously on separate branches, then
 integrate the app. These are delivery phases, not three serial work periods.
 
-The first implementation is software only and image only: photos, previews,
-requested crops, and optional full-image detail. Text chat, voice notes, video,
-cloud services, generative reconstruction, and physical radio integration are
-outside this scope. This supersedes the earlier voice-and-image breakdown.
+The current implementation is software only and now covers images, text and voice
+notes. The text/voice extension includes formats, compression, display/playback and
+packet/ACK integration with the existing browser mock transport. See
+[TEXT_VOICE.md](docs/TEXT_VOICE.md). Video, cloud services, generative image
+reconstruction and physical radio integration remain outside this scope. Realistic
+mesh simulation and independent persistent endpoints remain unfinished.
 
 | Phase | Owner | Proposed branch | Demo result |
 |---|---|---|---|
@@ -57,7 +59,9 @@ the evidence each endpoint actually has.
 
 **Owner:** Person 3
 
-**Branch:** `media-handling`
+**Branch:** `codex/media-handling`
+
+**Implementation status:** Media pipeline, version 2 wire contract, real NPS trail-sign fixture, offline acceptance demo, and automated media tests are implemented on this branch. See [MEDIA_CONTRACT.md](docs/MEDIA_CONTRACT.md) for API boundaries, protocol layout, scheduling handoff, measured codec results and reproduction. The official Meshtastic SDK/protobuf adapter uses private application port 256; [MESHTASTIC.md](docs/MESHTASTIC.md) records upstream reuse and the Meshtasticator handoff. Shared artifacts are on this branch; they have not been committed to or merged into the common base.
 
 1. Retain the source photo locally and generate a tiny, independently decodable
    preview. Evaluate JPEG and WebP against measured byte budgets.
@@ -127,6 +131,8 @@ fabricated countdown or success event.
 
 **Branch:** `app-interface`
 
+**Mock status:** The requested three-panel interactive mock is available locally; see [UI_MOCK.md](docs/UI_MOCK.md). It uses real media bytes and verified progressive tiles, with a deliberately simplified visual transport model. The complete Phase 2 transport and Phase 3 integrated acceptance gates remain outstanding.
+
 Build an iPhone-style sender and recipient interface alongside the five-node map.
 Person 1 can prepare it against event fixtures during the parallel work.
 
@@ -194,5 +200,6 @@ Document how to reproduce the demo, interruption cases, and benchmark results.
 4. Integrate the app, run the complete acceptance scenarios and comparison, and
    document the measured results and remaining simulator limitations.
 
-These branches and components are planned work. Updating this document does not
-mean the app, pipeline, simulator, or implementation tests already exist.
+Phase 1 media handling is implemented on `codex/media-handling`. An interactive UI mock is available. The full mesh
+simulator, production app integration, integrated radio scenarios and comparison
+benchmarks remain planned work; the media demo does not claim those gates are complete.
