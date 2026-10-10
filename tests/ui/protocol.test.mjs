@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {webcrypto} from 'node:crypto';
-import {parseManifest,Reassembler,makeAck,makeRequest,makeMissing,fromHex,validate,toHex} from '../../imageoverbt/ui/protocol.mjs';
+import {parseManifest,Reassembler,makeAck,makeRequest,makeMissing,fromHex,validate,toHex} from '../../bunkr/ui/protocol.mjs';
 if(!globalThis.crypto)globalThis.crypto=webcrypto;
 const root=new URL('../../fixtures/wire/',import.meta.url);
 test('browser reassembles actual Python golden frames exactly after reordering and duplicates',async()=>{

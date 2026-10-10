@@ -206,7 +206,7 @@ export class MeshSimulator {
 
   enqueue(packet, current = packet.source) {
     if (packet.external) {
-      // Already serialized imageoverbt v2 frames: don't add this standalone
+      // Already serialized bunkr v2 frames: don't add this standalone
       // demo's incompatible 40-byte envelope. Count the actual SDK radio budget.
       if (!(packet.bytes instanceof Uint8Array) || packet.bytes.length > 220 || packet.bytes.length < 6 ||
           packet.wireBytes !== packet.bytes.length + (packet.bytes.length > 127 ? 34 : 33)) throw new Error("Invalid external application frame or radio budget");

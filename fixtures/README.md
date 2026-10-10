@@ -22,7 +22,7 @@ encoded bytes, integrity and decoding, not human reading comprehension.
 `wire/` contains version 2 manifests, a crop request, hex-encoded data packet
 arrays, independently decodable representation bytes, and measured codec settings.
 Phase 2 can consume these without importing Pillow or implementing media encoding.
-Regenerate with `python3 -m imageoverbt.demo`, then copy desired wire artifacts
+Regenerate with `python3 -m bunkr.demo`, then copy desired wire artifacts
 from `demo-output/`. Use committed encoded bytes for cross-language golden tests;
 codec output may differ across Pillow/libjpeg/libwebp versions. Neither Python's
 random sequence nor codec bytes are intended as a cross-language simulation seed

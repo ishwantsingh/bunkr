@@ -11,9 +11,9 @@ from unittest.mock import patch
 
 from PIL import Image
 
-from imageoverbt.contract import Manifest
-from imageoverbt.media import Store
-from imageoverbt.ui_server import DemoModel, Handler, MAX_PHOTO_UPLOAD
+from bunkr.contract import Manifest
+from bunkr.media import Store
+from bunkr.ui_server import DemoModel, Handler, MAX_PHOTO_UPLOAD
 
 
 def photo(format='PNG', size=(240, 360), color=(25, 125, 220), **kwargs):
@@ -78,10 +78,10 @@ class PhotoImportTests(unittest.TestCase):
         for data in (b'', b'not an image', photo('GIF'), photo()[:40]):
             with self.subTest(data=data[:10]), self.assertRaises(ValueError):
                 self.model.import_photo(data)
-        with patch('imageoverbt.ui_server.MAX_PHOTO_UPLOAD', 10):
+        with patch('bunkr.ui_server.MAX_PHOTO_UPLOAD', 10):
             with self.assertRaisesRegex(ValueError, '12 MiB'):
                 self.model.import_photo(photo())
-        with patch('imageoverbt.ui_server.MAX_PHOTO_PIXELS', 100):
+        with patch('bunkr.ui_server.MAX_PHOTO_PIXELS', 100):
             with self.assertRaisesRegex(ValueError, 'megapixels'):
                 self.model.import_photo(photo())
         animated = BytesIO()

@@ -1,7 +1,7 @@
 // Connect the reference UI to the existing binary protocol and mesh engine.
-import {RADIO_PRESETS,Network} from '../../../imageoverbt/ui/network.mjs';
-import {getConnections} from '../../../imageoverbt/ui/mesh/simulator.mjs';
-import {parseManifest,parseMessageManifest,Reassembler,makeAck,makeRequest,decodeMessageText,validateVoiceHeader} from '../../../imageoverbt/ui/protocol.mjs';
+import {RADIO_PRESETS,Network} from '../../../bunkr/ui/network.mjs';
+import {getConnections} from '../../../bunkr/ui/mesh/simulator.mjs';
+import {parseManifest,parseMessageManifest,Reassembler,makeAck,makeRequest,decodeMessageText,validateVoiceHeader} from '../../../bunkr/ui/protocol.mjs';
 export const IDS={A:'!a3f2',B:'!19b4',C:'!e05d',D:'!7c1e',E:'!4a8c'};
 const LETTERS={A:'A',B:'B',C:'C',D:'E',E:'D'};
 export const engineId=id=>Object.keys(IDS).find(key=>IDS[key]===id);

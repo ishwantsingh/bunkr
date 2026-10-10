@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "imageoverbt"
+name = "bunkr"
 version = "0.1.0"
 description = "Off-grid text, voice and recipient-directed image delivery"
 requires-python = ">=3.11"
@@ -13,12 +13,12 @@ dependencies = ["Pillow>=12.3,<13", "pillow-heif>=1.1,<2"]
 meshtastic = ["meshtastic==2.7.11"]
 
 [project.scripts]
-imageoverbt-demo = "imageoverbt.demo:main"
-imageoverbt-meshtastic-demo = "imageoverbt.meshtastic_transport:main"
-imageoverbt-ui = "imageoverbt.ui_server:main"
+bunkr-demo = "bunkr.demo:main"
+bunkr-meshtastic-demo = "bunkr.meshtastic_transport:main"
+bunkr-ui = "bunkr.ui_server:main"
 
 [tool.setuptools.packages.find]
-include = ["imageoverbt*"]
+include = ["bunkr*"]
 
 [tool.setuptools.package-data]
-imageoverbt = ["ui/*.html", "ui/*.css", "ui/*.mjs", "ui/mesh/*.mjs", "ui/mesh/*.css", "ui/fonts/*.ttf", "ui/fonts/*-OFL.txt", "ui/client/*.html", "ui/client/*.svg", "ui/client/assets/*.js", "ui/client/assets/*.css"]
+bunkr = ["ui/*.html", "ui/*.css", "ui/*.mjs", "ui/mesh/*.mjs", "ui/mesh/*.css", "ui/fonts/*.ttf", "ui/fonts/*-OFL.txt", "ui/client/*.html", "ui/client/*.svg", "ui/client/assets/*.js", "ui/client/assets/*.css"]

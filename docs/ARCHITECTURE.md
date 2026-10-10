@@ -76,14 +76,14 @@ progress currently lives in memory and does not survive a page reload.
 | Component | Implementation |
 | --- | --- |
 | Phone UI and interaction | [App.tsx](../chatterbot/src/App.tsx), [components](../chatterbot/src/components), [runtime.mjs](../chatterbot/src/mesh/runtime.mjs) |
-| Shared mesh and native contract adapter | [simulator.mjs](../imageoverbt/ui/mesh/simulator.mjs), [network.mjs](../imageoverbt/ui/network.mjs) |
-| Browser packet receiver | [protocol.mjs](../imageoverbt/ui/protocol.mjs) |
-| Local API | [ui_server.py](../imageoverbt/ui_server.py) |
-| Image processing and SQLite state | [media.py](../imageoverbt/media.py) |
-| Text/voice media and persistence | [messages.py](../imageoverbt/messages.py), [runtime.mjs](../chatterbot/src/mesh/runtime.mjs) |
-| Binary frame contract | [contract.py](../imageoverbt/contract.py) |
-| Official SDK adapter | [meshtastic_transport.py](../imageoverbt/meshtastic_transport.py) |
-| Local event vocabulary | [events.py](../imageoverbt/events.py) — full transport metrics integration remains pending |
+| Shared mesh and native contract adapter | [simulator.mjs](../bunkr/ui/mesh/simulator.mjs), [network.mjs](../bunkr/ui/network.mjs) |
+| Browser packet receiver | [protocol.mjs](../bunkr/ui/protocol.mjs) |
+| Local API | [ui_server.py](../bunkr/ui_server.py) |
+| Image processing and SQLite state | [media.py](../bunkr/media.py) |
+| Text/voice media and persistence | [messages.py](../bunkr/messages.py), [runtime.mjs](../chatterbot/src/mesh/runtime.mjs) |
+| Binary frame contract | [contract.py](../bunkr/contract.py) |
+| Official SDK adapter | [meshtastic_transport.py](../bunkr/meshtastic_transport.py) |
+| Local event vocabulary | [events.py](../bunkr/events.py) — full transport metrics integration remains pending |
 | Automated checks | [Python tests](../tests), [browser module tests](../tests/ui), [CI configuration](../.github/workflows/media.yml) |
 
 See [implementation phases](../IMPLEMENTATION_PHASES.md),

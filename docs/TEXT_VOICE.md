@@ -10,7 +10,7 @@ requires **FFmpeg with libopus** on the server's PATH. On macOS, `brew install
 ffmpeg`; on Ubuntu, `sudo apt-get install ffmpeg`. Text and images still work
 without it; attempting to send voice reports the server dependency error.
 
-Start `python -m imageoverbt.ui_server` and open http://127.0.0.1:8765.
+Start `python -m bunkr.ui_server` and open http://127.0.0.1:8765.
 Either Richard or Maya can:
 
 - Type a message and press Enter or the send arrow.
@@ -37,8 +37,8 @@ The sample is clearly synthetic fixture speech, not a user recording. See
 
 ## Shared transport contract
 
-Implementation: [messages.py](../imageoverbt/messages.py),
-[browser protocol](../imageoverbt/ui/protocol.mjs), and
+Implementation: [messages.py](../bunkr/messages.py),
+[browser protocol](../bunkr/ui/protocol.mjs), and
 [reference UI transport adapter](../chatterbot/src/mesh/runtime.mjs).
 
 This adds **manifest tag 7** to wire version 2. Image tags 1–6 are unchanged.

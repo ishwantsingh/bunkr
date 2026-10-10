@@ -3,9 +3,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from imageoverbt.contract import Ack, Bounds, Manifest, Packet, Request
-from imageoverbt.media import Store
-from imageoverbt.ui_server import DemoModel
+from bunkr.contract import Ack, Bounds, Manifest, Packet, Request
+from bunkr.media import Store
+from bunkr.ui_server import DemoModel
 
 
 class UIModelTests(unittest.TestCase):

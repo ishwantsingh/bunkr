@@ -1,20 +1,20 @@
-# imageoverbt
+# bunkr
 
 **A photo arrives as a tiny preview. Tap the unreadable trail sign, and the network prioritizes that crop.**
 
-imageoverbt is an off-grid messaging prototype for text, voice notes and recipient-directed images for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
+bunkr is an off-grid messaging prototype for text, voice notes and recipient-directed images for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
 
 **Status:** The `mesh-simulation` branch is integrated with both phone UIs. Text, Opus voice, image previews and requested detail tiles now relay their actual binary packets through its five-node, range-aware software mesh. The shared engine models per-hop loss, bounded retries, priority queueing and preset-based transmission time; requests and receipt ACKs use the reverse mesh. See [demo controls and model limits](docs/UI_MOCK.md) and [text/voice setup](docs/TEXT_VOICE.md). Firmware simulation and independent persistent endpoints remain unfinished.
 
 See the [architecture diagram and built-versus-planned breakdown](docs/ARCHITECTURE.md).
 
-Run `python3 -m unittest discover -s tests -v` and `python3 -m imageoverbt.demo` after installing with `python3 -m pip install -e .`. The offline demo writes a real trail-sign comparison and measured codec results to `demo-output/`. See [the media contract and setup instructions](docs/MEDIA_CONTRACT.md).
+Run `python3 -m unittest discover -s tests -v` and `python3 -m bunkr.demo` after installing with `python3 -m pip install -e .`. The offline demo writes a real trail-sign comparison and measured codec results to `demo-output/`. See [the media contract and setup instructions](docs/MEDIA_CONTRACT.md).
 
-Meshtastic interoperability uses the official [Python SDK](https://github.com/meshtastic/python) and generated [protobuf definitions](https://github.com/meshtastic/protobufs). Install `python3 -m pip install -e ".[meshtastic]"` and run `python3 -m imageoverbt.meshtastic_transport` for an offline protocol check. Frames are capped at 220 bytes to leave room for the Meshtastic wrapper and encryption overhead. See [upstream integration and simulator handoff](docs/MESHTASTIC.md).
+Meshtastic interoperability uses the official [Python SDK](https://github.com/meshtastic/python) and generated [protobuf definitions](https://github.com/meshtastic/protobufs). Install `python3 -m pip install -e ".[meshtastic]"` and run `python3 -m bunkr.meshtastic_transport` for an offline protocol check. Frames are capped at 220 bytes to leave room for the Meshtastic wrapper and encryption overhead. See [upstream integration and simulator handoff](docs/MESHTASTIC.md).
 
 ## Try the integrated messaging demo
 
-Run `python3 -m imageoverbt.ui_server` after installation and open
+Run `python3 -m bunkr.ui_server` after installation and open
 [localhost:8765](http://127.0.0.1:8765). The application uses the React UI in
 `chatterbot/` directly: both phone chats, dusk bokeh background, floating glass
 mesh card, image expansion/collapse and recording transitions.
@@ -126,4 +126,4 @@ The current prototype covers **text, voice notes, photos, previews, and requeste
 - [SSDV: resilient image transmission over unreliable links](https://github.com/fsphil/ssdv)
 - [VISTA-LoRa: research on selective visual transmission over LoRa](https://ieeexplore.ieee.org/abstract/document/11513963)
 
-These projects establish related work. imageoverbt's proposed focus is the interaction between recipient-selected image detail, transmission priority, and explicit delivery evidence.
+These projects establish related work. bunkr's proposed focus is the interaction between recipient-selected image detail, transmission priority, and explicit delivery evidence.

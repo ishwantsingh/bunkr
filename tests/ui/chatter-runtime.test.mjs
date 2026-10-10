@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {webcrypto,createHash} from 'node:crypto';
 import {MediaRuntime,framesFor} from '../../chatterbot/src/mesh/runtime.mjs';
-import {parseManifest} from '../../imageoverbt/ui/protocol.mjs';
+import {parseManifest} from '../../bunkr/ui/protocol.mjs';
 if(!globalThis.crypto)globalThis.crypto=webcrypto;
 const rep=kind=>({manifest:readFileSync(new URL(`../../fixtures/wire/${kind}.manifest.bin`,import.meta.url)).toString('hex'),packets:JSON.parse(readFileSync(new URL(`../../fixtures/wire/${kind}.packets.json`,import.meta.url)))});
 const preview=rep('preview'),crop=rep('crop');

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {Network,route,radioBytes} from '../../imageoverbt/ui/network.mjs';
-import {clampBounds,parseManifest,Reassembler,makeAck,validate,fromHex} from '../../imageoverbt/ui/protocol.mjs';
+import {Network,route,radioBytes} from '../../bunkr/ui/network.mjs';
+import {clampBounds,parseManifest,Reassembler,makeAck,validate,fromHex} from '../../bunkr/ui/protocol.mjs';
 const image=JSON.parse(readFileSync(new URL('../../fixtures/wire/crop.packets.json',import.meta.url)));
 const previewManifest=readFileSync(new URL('../../fixtures/wire/preview.manifest.bin',import.meta.url)).toString('hex');
 const previewPackets=JSON.parse(readFileSync(new URL('../../fixtures/wire/preview.packets.json',import.meta.url)));

@@ -5,7 +5,7 @@
 ```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install -e ".[meshtastic]"
-.venv/bin/python -m imageoverbt.ui_server --port 8765
+.venv/bin/python -m bunkr.ui_server --port 8765
 ```
 
 Open http://127.0.0.1:8765. Install FFmpeg for voice. The server binds to loopback,
@@ -76,7 +76,7 @@ temporary local database, removed when the server stops.
 
 The existing Python endpoints, media codecs, binary contract and mesh engine
 are unchanged. `chatterbot/src/mesh/runtime.mjs` connects the actual reference
-components to `imageoverbt/ui/network.mjs` and `protocol.mjs`; mock route/timing
+components to `bunkr/ui/network.mjs` and `protocol.mjs`; mock route/timing
 functions are removed. Verified tiles render immediately and independently.
 
 With Node.js **22.12+**:
@@ -88,7 +88,7 @@ npm run build
 npm run lint
 ```
 
-The build type-checks the UI and writes bundled assets to `imageoverbt/ui/client/`
+The build type-checks the UI and writes bundled assets to `bunkr/ui/client/`
 plus the server's root `index.html`. Commit these generated assets alongside
 source changes. Python wheels include them and the locally licensed fonts;
 users running the Python server need neither Node.js nor internet access.
@@ -97,7 +97,7 @@ For live editing, start the Python server on 8765, then `npm run dev` in
 
 ## Engine and packet integration
 
-The canonical engine is `imageoverbt/ui/mesh/simulator.mjs`, imported from branch
+The canonical engine is `bunkr/ui/mesh/simulator.mjs`, imported from branch
 `mesh-simulation`. `network.mjs` adapts the existing native version-2 binary media
 contract to it without replacing the content with fixture IDs or JSON wrappers.
 `mesh-ui/simulator.mjs` re-exports the same engine for the standalone demo.

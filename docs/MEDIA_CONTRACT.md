@@ -1,6 +1,6 @@
 # Media contract, version 2
 
-Implementation: `imageoverbt/contract.py`, `media.py`, `events.py`. Python 3.11+
+Implementation: `bunkr/contract.py`, `media.py`, `events.py`. Python 3.11+
 and Pillow are the only runtime requirements. Mesh scheduling and the app are
 consumers of this module, and are not implemented here.
 
@@ -141,7 +141,7 @@ radio model, so the Phase 1 report contains no invented airtime or wait estimate
 python3 -m venv .venv
 .venv/bin/python -m pip install -e .
 .venv/bin/python -m unittest discover -s tests -v
-.venv/bin/python -m imageoverbt.demo
+.venv/bin/python -m bunkr.demo
 ```
 
 The demo runs entirely offline with the committed NPS photo. It sends the preview

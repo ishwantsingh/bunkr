@@ -8,9 +8,9 @@ from io import BytesIO
 
 from PIL import Image, ImageOps
 
-from imageoverbt.contract import (Ack, Bounds, Codec, FULL_BOUNDS, Kind, Manifest,
+from bunkr.contract import (Ack, Bounds, Codec, FULL_BOUNDS, Kind, Manifest,
     MAX_PACKET, PAYLOAD, Packet, Request, decode_missing, frame, missing_frames)
-from imageoverbt.media import Store, digest, encode_budget
+from bunkr.media import Store, digest, encode_budget
 
 
 class MediaTests(unittest.TestCase):

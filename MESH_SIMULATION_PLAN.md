@@ -3,7 +3,7 @@
 **Integration status:** This branch's engine is now shared by the messaging app and
 the standalone network demo. It relays actual text, Opus voice, preview and crop
 frames, including reverse requests and verified receipt ACKs. The canonical engine
-is `imageoverbt/ui/mesh/simulator.mjs`; `mesh-ui/simulator.mjs` re-exports it.
+is `bunkr/ui/mesh/simulator.mjs`; `mesh-ui/simulator.mjs` re-exports it.
 
 The standalone fixture demo retains its original 230-byte envelope format. The
 integrated messaging app preserves the established 220-byte application contract

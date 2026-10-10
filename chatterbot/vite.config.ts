@@ -6,6 +6,6 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   base: '/client/',
-  build: {outDir: '../imageoverbt/ui/client', emptyOutDir: true},
+  build: {outDir: '../bunkr/ui/client', emptyOutDir: true},
   server: {proxy: {'/api': 'http://127.0.0.1:8765', '/fonts': 'http://127.0.0.1:8765'}},
 })

@@ -5,4 +5,4 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 for(const [command,args] of [['chatterbot/node_modules/typescript/bin/tsc',['-b']],['chatterbot/node_modules/vite/bin/vite.js',['build']]]){
   execFileSync(process.execPath,[root+command,...args],{cwd:root+'chatterbot',stdio:'inherit'});
 }
-copyFileSync(root+'imageoverbt/ui/client/index.html',root+'imageoverbt/ui/index.html');
+copyFileSync(root+'bunkr/ui/client/index.html',root+'bunkr/ui/index.html');

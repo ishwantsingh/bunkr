@@ -1,5 +1,5 @@
 import type { ImageNote } from '../mesh/types'
-import { parseManifest } from '../../../imageoverbt/ui/protocol.mjs'
+import { parseManifest } from '../../../bunkr/ui/protocol.mjs'
 
 const DETAIL_BUDGET = 6 * 8000 // existing /api/crop: six independent tiles, up to 8 KB each
 
