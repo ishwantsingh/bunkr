@@ -38,7 +38,7 @@ class DemoModel:
         except ImportError:
             self.wrap = None
             self.radio_size = lambda wire: len(wire)
-            self.transport = 'imageoverbt v2 · install Meshtastic extra for protobuf wrapping'
+            self.transport = 'bunkr v2 · install Meshtastic extra for protobuf wrapping'
 
     def store(self):
         from contextlib import contextmanager
@@ -244,10 +244,10 @@ def main():
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--source', type=Path, default=SOURCE)
     args = parser.parse_args()
-    with TemporaryDirectory(prefix='imageoverbt-ui-') as work:
+    with TemporaryDirectory(prefix='bunkr-ui-') as work:
         model = DemoModel(Path(work) / 'media.sqlite3', args.source)
         server = ThreadingHTTPServer(('127.0.0.1', args.port), partial(Handler, model=model))
-        print(f'imageoverbt UI: http://127.0.0.1:{server.server_port}', flush=True)
+        print(f'bunkr UI: http://127.0.0.1:{server.server_port}', flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

@@ -25,12 +25,12 @@ ENCRYPTION_OVERHEAD_BYTES = 12
 def validate_frame(wire):
     """Validate full application structure and CRC before queuing or delivering."""
     if not isinstance(wire, bytes) or not 6 <= len(wire) <= MAX_PACKET:
-        raise ValueError('Invalid imageoverbt frame size or type')
+        raise ValueError('Invalid bunkr frame size or type')
     decoders = {1: Manifest.decode, 2: Request.decode, 3: Packet.decode,
                 4: Ack.decode, 5: Ack.decode, 6: decode_missing, 7: MessageManifest.decode}
     decoder = decoders.get(wire[1])
     if decoder is None:
-        raise ValueError('Unknown imageoverbt frame type')
+        raise ValueError('Unknown bunkr frame type')
     return decoder(wire)
 
 

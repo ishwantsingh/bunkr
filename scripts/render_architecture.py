@@ -37,7 +37,7 @@ def boundary(x,y,w,h,label,color):
     d.rounded_rectangle((x*SCALE,y*SCALE,(x+w)*SCALE,(y+h)*SCALE),radius=18*SCALE,outline=color,width=3*SCALE)
     text(x+18,y+14,label,19,color)
 
-text(40,25,'Imageoverbt | text, voice and image delivery',34,'#13253b')
+text(40,25,'Bunkr | text, voice and image delivery',34,'#13253b')
 text(40,77,'LEFT TO RIGHT: encode locally, send actual packet bytes, verify on receipt, then display text / play voice / reveal detail.',22)
 text(40,120,'GREEN = built     AMBER = demo boundary     BLUE = planned integration',19)
 xs=[40,330,620,910,1200,1490]

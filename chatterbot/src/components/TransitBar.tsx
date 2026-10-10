@@ -15,19 +15,22 @@ type Props = {
 // send = message out, then ACK back. pull = request to the sender, then data back.
 export default function TransitBar({
   transit,
-  route,
+  route: messageRoute,
   alignRight = false,
   kind = 'send',
   className = 'w-[36cqw]',
 }: Props) {
+  const route = transit?.route?.length ? transit.route : messageRoute
   const hops = route.length - 1
   const firstGroup = transit?.phase === 'forward' || transit?.phase === 'request'
   const active = transit ? (firstGroup ? transit.hop : hops + transit.hop) : -1
 
   let label = kind === 'pull' ? 'Requesting…' : 'Queued'
   if (transit) {
-    const eta = `~${Math.max(1, Math.round(transit.etaMs / 1000))} s left`
-    if (transit.lost) {
+    const eta = transit.etaMs === null ? 'arrival time unknown' : `~${Math.max(1, Math.round(transit.etaMs / 1000))} s left`
+    if (transit.waiting) {
+      label = 'Waiting for a route · arrival time unknown'
+    } else if (transit.lost) {
       label = `Packet lost at hop ${transit.hop + 1} · resending`
     } else if (transit.phase === 'request') {
       label = `Requesting · hop ${transit.hop + 1} of ${hops} · ${eta}`

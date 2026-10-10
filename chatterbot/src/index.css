@@ -23,3 +23,34 @@
     opacity: 1;
   }
 }
+
+@keyframes lossfade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@font-face {font-family:'Crimson Pro';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/crimson-pro.ttf') format('truetype')}
+@font-face {font-family:'Instrument Serif';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/instrument-serif.ttf') format('truetype')}
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after {animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}
+}

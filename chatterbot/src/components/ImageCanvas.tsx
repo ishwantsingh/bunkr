@@ -1,7 +1,7 @@
 import { useRef, useState, type PointerEvent } from 'react'
 import { regionBytes } from '../media/image'
 import { formatBytes, formatSeconds } from '../media/regions'
-import { estimatePullMs, packetCount } from '../mesh/mockMesh'
+import { estimatePullMs, packetCount } from '../mesh/estimates'
 import type { ImageNote, Region } from '../mesh/types'
 import TransitBar from './TransitBar'
 
@@ -71,8 +71,9 @@ export default function ImageCanvas({
     if (box.w < MIN_BOX || box.h < MIN_BOX) return
     const id = crypto.randomUUID()
     onRegionsChange((rs) => [...rs, { id, ...box, status: 'selected' }])
-    regionBytes(image.src, box).then((bytes) =>
+    regionBytes().then((bytes) =>
       onRegionsChange((rs) => rs.map((r) => (r.id === id ? { ...r, bytes } : r))),
+      () => onRegionsChange((rs) => rs.filter((r) => r.id !== id)),
     )
   }
 
@@ -108,26 +109,12 @@ export default function ImageCanvas({
         />
       </div>
 
-      {/* Sharpened areas that have arrived */}
-      {!mine &&
-        image.regions
-          .filter((r) => r.status === 'done')
-          .map((r) => (
-            <div key={r.id} className="absolute animate-[fadein_600ms_ease-out] overflow-hidden" style={place(r)}>
-              <img
-                src={image.src}
-                alt=""
-                draggable={false}
-                className="absolute max-w-none"
-                style={{
-                  width: `${100 / r.w}%`,
-                  height: `${100 / r.h}%`,
-                  left: `${(-r.x / r.w) * 100}%`,
-                  top: `${(-r.y / r.h) * 100}%`,
-                }}
-              />
-            </div>
-          ))}
+      {/* Only independently verified bytes received over the mesh are drawn. */}
+      {!mine && image.tiles.map((tile) => (
+        <div key={tile.id} className="absolute animate-[fadein_600ms_ease-out] overflow-hidden" style={place(tile)}>
+          <img src={tile.src} alt="Verified source detail" draggable={false} className="h-full w-full object-fill" />
+        </div>
+      ))}
 
       {/* Selected / in-flight / failed boxes */}
       {!mine &&
@@ -145,6 +132,7 @@ export default function ImageCanvas({
               }`}
               style={place(r)}
             >
+              {r.status === 'pulling' && <div className="pointer-events-none absolute inset-0 flex items-center justify-center font-sans text-[2.6cqw] text-white/90">{r.total ? `${Math.round((r.received ?? 0) / r.total * 100)}%` : ''}</div>}
               {interactive && (
                 <div className={`absolute bottom-full mb-[1cqw] ${r.x + r.w / 2 > 0.5 ? 'right-0' : 'left-0'}`}>
                   {r.status === 'pulling' ? (

@@ -5,10 +5,10 @@ import tempfile
 import unittest
 import zlib
 
-from imageoverbt.contract import Ack, Packet, PAYLOAD
-from imageoverbt.messages import (MessageStore, MessageManifest, MessageKind, MessageCodec,
+from bunkr.contract import Ack, Packet, PAYLOAD
+from bunkr.messages import (MessageStore, MessageManifest, MessageKind, MessageCodec,
     MAX_TEXT, decode_text, voice_available)
-from imageoverbt.ui_server import DemoModel
+from bunkr.ui_server import DemoModel
 
 FIXTURE = Path(__file__).resolve().parents[1] / 'fixtures/trail-voice.ogg'
 
@@ -103,7 +103,7 @@ class MessageTests(unittest.TestCase):
 
     @unittest.skipUnless(voice_available(),'FFmpeg is optional for text-only installs')
     def test_real_voice_compression_playable_roundtrip(self):
-        from imageoverbt.messages import _pcm
+        from bunkr.messages import _pcm
         import io,wave
         pcm=_pcm(FIXTURE.read_bytes(),'ogg');buffer=io.BytesIO()
         with wave.open(buffer,'wb') as w:w.setnchannels(1);w.setsampwidth(2);w.setframerate(16000);w.writeframes(pcm)
@@ -115,7 +115,7 @@ class MessageTests(unittest.TestCase):
 
     @unittest.skipUnless(voice_available(),'FFmpeg is optional for text-only installs')
     def test_invalid_audio_and_overlong_notes_rejected(self):
-        from imageoverbt.messages import encode_voice
+        from bunkr.messages import encode_voice
         import io,wave
         for data in [b'',b'not audio',b'\0'*(8*1024*1024+1)]:
             with self.assertRaises(ValueError):encode_voice(data)
@@ -125,7 +125,7 @@ class MessageTests(unittest.TestCase):
 
     def test_official_meshtastic_envelope(self):
         try:
-            from imageoverbt.meshtastic_transport import data_message,radio_size
+            from bunkr.meshtastic_transport import data_message,radio_size
         except ImportError:self.skipTest('Meshtastic extra not installed')
         msg=self.sender.produce_text('hello'*100)
         for wire in [msg.manifest.encode(),*msg.packets()]:

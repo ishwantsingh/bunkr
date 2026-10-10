@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { estimatePullMs } from '../mesh/mockMesh'
+import { estimatePullMs } from '../mesh/estimates'
 import type { Message, Region } from '../mesh/types'
 import { formatBytes, formatSeconds, renderedShare } from '../media/regions'
 import ImageCanvas from './ImageCanvas'
@@ -49,7 +49,7 @@ export default function ImageViewer({ message: m, mine, kbps, originRect, onClos
 
   const pending = image.regions.filter((r) => r.status === 'selected' || r.status === 'failed')
   const pendingBytes = pending.reduce((a, r) => a + (r.bytes ?? 0), 0)
-  const share = renderedShare(image.regions)
+  const share = renderedShare(image.tiles)
 
   let hint = 'Drag on the image to select areas to sharpen'
   if (mine)

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {mountPhotoImport,MAX_PHOTO_UPLOAD,uploadPhoto} from '../../imageoverbt/ui/photos.mjs';
-import {parseManifest} from '../../imageoverbt/ui/protocol.mjs';
+import {mountPhotoImport,MAX_PHOTO_UPLOAD,uploadPhoto} from '../../bunkr/ui/photos.mjs';
+import {parseManifest} from '../../bunkr/ui/protocol.mjs';
 const manifest=readFileSync(new URL('../../fixtures/wire/preview.manifest.bin',import.meta.url)).toString('hex');
 const response={image_id:parseManifest(manifest).imageId,preview:{manifest}};
 class Element{

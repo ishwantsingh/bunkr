@@ -1,28 +1,39 @@
-# imageoverbt
+# bunkr
 
 **A photo arrives as a tiny preview. Tap the unreadable trail sign, and the network prioritizes that crop.**
 
-imageoverbt is an off-grid messaging prototype for text, voice notes and recipient-directed images for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
+bunkr is an off-grid messaging prototype for text, voice notes and recipient-directed images for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
 
 **Status:** The `mesh-simulation` branch is integrated with both phone UIs. Text, Opus voice, image previews and requested detail tiles now relay their actual binary packets through its five-node, range-aware software mesh. The shared engine models per-hop loss, bounded retries, priority queueing and preset-based transmission time; requests and receipt ACKs use the reverse mesh. See [demo controls and model limits](docs/UI_MOCK.md) and [text/voice setup](docs/TEXT_VOICE.md). Firmware simulation and independent persistent endpoints remain unfinished.
 
 See the [architecture diagram and built-versus-planned breakdown](docs/ARCHITECTURE.md).
 
-Run `python3 -m unittest discover -s tests -v` and `python3 -m imageoverbt.demo` after installing with `python3 -m pip install -e .`. The offline demo writes a real trail-sign comparison and measured codec results to `demo-output/`. See [the media contract and setup instructions](docs/MEDIA_CONTRACT.md).
+Run `python3 -m unittest discover -s tests -v` and `python3 -m bunkr.demo` after installing with `python3 -m pip install -e .`. The offline demo writes a real trail-sign comparison and measured codec results to `demo-output/`. See [the media contract and setup instructions](docs/MEDIA_CONTRACT.md).
 
-Meshtastic interoperability uses the official [Python SDK](https://github.com/meshtastic/python) and generated [protobuf definitions](https://github.com/meshtastic/protobufs). Install `python3 -m pip install -e ".[meshtastic]"` and run `python3 -m imageoverbt.meshtastic_transport` for an offline protocol check. Frames are capped at 220 bytes to leave room for the Meshtastic wrapper and encryption overhead. See [upstream integration and simulator handoff](docs/MESHTASTIC.md).
+Meshtastic interoperability uses the official [Python SDK](https://github.com/meshtastic/python) and generated [protobuf definitions](https://github.com/meshtastic/protobufs). Install `python3 -m pip install -e ".[meshtastic]"` and run `python3 -m bunkr.meshtastic_transport` for an offline protocol check. Frames are capped at 220 bytes to leave room for the Meshtastic wrapper and encryption overhead. See [upstream integration and simulator handoff](docs/MESHTASTIC.md).
 
 ## Try the integrated messaging demo
 
-Run `python3 -m imageoverbt.ui_server` after installation and open
-[localhost:8765](http://127.0.0.1:8765). Two phone chats surround an animated
-five-node mesh. Use **Upload photo** on the sender to import JPG, PNG, WebP or
-iPhone HEIC photos, then **Send photo**. Drag the recipient’s crop box and click **Request section** to
-watch verified source detail arrive progressively. Type messages on either phone,
-record/import a voice note, or click **Try voice** for a speech sample. Voice
-requires FFmpeg with libopus on the server. Loss, relay removal,
-disconnection, pause, reset and another-section requests are interactive.
-See [UI_MOCK.md](docs/UI_MOCK.md) for setup, controls and simulation limits.
+Run `python3 -m bunkr.ui_server` after installation and open
+[localhost:8765](http://127.0.0.1:8765). The application uses the React UI in
+`chatterbot/` directly: both phone chats, dusk bokeh background, floating glass
+mesh card, image expansion/collapse and recording transitions.
+
+Use the composer's photo icon on either phone to pick and send a JPG, PNG, WebP
+or HEIC photo. Open the received preview, drag to select an area, then tap its
+arrow to render it. Six independently verified pieces reveal source detail as
+it arrives; **Render full** uses the same pipeline for the whole image. Type a
+message or record a voice note using the microphone, cancel and send controls.
+Voice encoding requires FFmpeg with libopus.
+
+Hover over the mesh to reveal routes and measured counters. Its gear opens the
+reference simulation controls and event timeline. Preset, loss, node position,
+range, online state and seed/reset control the existing packet engine. No extra
+upload, sample voice, retry or request buttons are added to the phones.
+
+Prebuilt assets are included; running the server needs no Node.js or internet.
+To change the frontend, use Node.js 22.12+ (`npm ci` in `chatterbot/`, then
+`npm run build`). See [UI_MOCK.md](docs/UI_MOCK.md) for controls and model limits.
 
 ## The use case
 
@@ -115,6 +126,4 @@ The current prototype covers **text, voice notes, photos, previews, and requeste
 - [SSDV: resilient image transmission over unreliable links](https://github.com/fsphil/ssdv)
 - [VISTA-LoRa: research on selective visual transmission over LoRa](https://ieeexplore.ieee.org/abstract/document/11513963)
 
-These projects establish related work. imageoverbt's proposed focus is the interaction between recipient-selected image detail, transmission priority, and explicit delivery evidence.
-
-The integrated middle panel now includes the `mesh-simulation` branch’s draggable map, per-node position/range/online controls, radio presets, loss, replay speed, single-event stepping, seed/reset, packet inspection, native chunk progress, timeline and approximate transfer estimates. See [demo controls](docs/UI_MOCK.md).
+These projects establish related work. bunkr's proposed focus is the interaction between recipient-selected image detail, transmission priority, and explicit delivery evidence.

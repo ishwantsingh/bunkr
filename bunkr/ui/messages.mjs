@@ -16,6 +16,7 @@ export function mountMessages(hooks){
       $(name+'-sample').disabled=disabled||!available;
       $(name+'-record').disabled=hooks.isBusy()||opening||!available||!!recorder&&recordOwner!==name;
     }
+    hooks.onControls?.();
   }
   function status(name,value){$(name+'-compose-status').textContent=value;}
   function bubble(name,outgoing,content){
@@ -140,13 +141,13 @@ export function mountMessages(hooks){
       active.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
       active.onstop=async()=>{
         clearInterval(recordTimer);stopTracks();const cancelled=recordCancelled||recordGeneration!==hooks.generation();
-        recorder=null;recordOwner=null;$(name+'-record').classList.remove('recording');$(name+'-record').querySelector('span').textContent='Record';controls();
-        if(cancelled)return;
+        recorder=null;recordOwner=null;hooks.onRecording?.(name,false);$(name+'-record').classList.remove('recording');$(name+'-record').querySelector('span').textContent='Record';controls();
+        if(cancelled){status(name,'Recording cancelled.');return;}
         try{const data=await blobPayload(new Blob(chunks,{type:active.mimeType}));hooks.guard(version);send(name==='alex'?1:2,'voice',data);}
         catch(error){if(error.name!=='AbortError')status(name,error.message);}
       };
       active.onerror=()=>{status(name,'Recording failed. Import audio or try the sample.');stopRecording(true);};
-      recorder.start(250);$(name+'-record').classList.add('recording');$(name+'-record').querySelector('span').textContent='Stop & send';
+      recorder.start(250);hooks.onRecording?.(name,true,stream);$(name+'-record').classList.add('recording');$(name+'-record').querySelector('span').textContent='Stop & send';
       recordTimer=setInterval(()=>{const elapsed=(Date.now()-recordStarted)/1000;status(name,`Recording ${elapsed.toFixed(0)}s / 60s · Stop & send when ready`);if(elapsed>=59)stopRecording();},250);
     }catch(error){stopTracks();status(name,error.name==='NotAllowedError'?'Microphone permission denied. Import audio or try the sample.':'Could not start the microphone. Import audio or try the sample.');}
     finally{opening=false;controls();}
@@ -155,7 +156,7 @@ export function mountMessages(hooks){
     const sender=name==='alex'?1:2;
     $(name+'-composer').addEventListener('submit',e=>{e.preventDefault();const text=$(name+'-text').value;if(!text.trim())return;
       if(new TextEncoder().encode(text).length>16384){status(name,'Text must fit within 16 KiB of UTF-8.');return;}
-      if(send(sender,'text',{text}))$(name+'-text').value='';
+      if(send(sender,'text',{text})){$(name+'-text').value='';hooks.onControls?.();}
     });
     $(name+'-sample').addEventListener('click',()=>send(sender,'voice_sample',{}));
     $(name+'-upload').addEventListener('click',()=>$(name+'-audio-file').click());
@@ -168,6 +169,7 @@ export function mountMessages(hooks){
   controls();
   return {
     controls,
+    cancelRecording(){stopRecording(true);},
     ready(value){available=value;controls();for(const name of ['alex','sam'])status(name,value?'Type a message, record, or try a voice note.':'Text ready. Voice requires FFmpeg on the server.');},
     reset(){stopRecording(true);for(const job of jobs){job.sent.el.remove();job.incoming?.el.remove();}jobs.clear();for(const name of ['alex','sam']){status(name,'');$(name+'-text').value='';}controls();}
   };

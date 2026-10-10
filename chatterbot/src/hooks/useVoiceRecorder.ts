@@ -19,8 +19,8 @@ const downsample = (values: number[], count: number) => {
 }
 
 // Records from the mic and exposes live, symmetric waveform levels (0–1).
-// Falls back to a simulated waveform if the mic is unavailable.
-export function useVoiceRecorder(bars = 18) {
+// Permission errors leave the composer available; audio is never fabricated.
+export function useVoiceRecorder(bars = 18, onError: (message: string) => void = () => {}) {
   const [recording, setRecording] = useState(false)
   const [levels, setLevels] = useState(() => idleLevels(bars))
 
@@ -41,7 +41,12 @@ export function useVoiceRecorder(bars = 18) {
     audioCtx.current = null
   }, [])
 
-  useEffect(() => teardown, [teardown])
+  useEffect(() => () => {
+    session.current++
+    if (recorder.current?.state === 'recording') recorder.current.stop()
+    recorder.current = null
+    teardown()
+  }, [teardown])
 
   const start = useCallback(async () => {
     const id = ++session.current
@@ -86,20 +91,15 @@ export function useVoiceRecorder(bars = 18) {
         raf.current = requestAnimationFrame(tick)
       }
       tick()
-    } catch {
-      // No mic (denied or unsupported): animate a plausible waveform instead.
-      const tick = (t: number) => {
-        const halfLevels = Array.from(
-          { length: half },
-          (_, i) => 0.45 + 0.4 * Math.sin(t / 140 + i * 0.9) * Math.sin(t / 370 + i * 0.4),
-        )
-        history.current.push(0.3 + 0.3 * Math.abs(Math.sin(t / 300)))
-        setLevels(mirror(halfLevels))
-        raf.current = requestAnimationFrame(tick)
-      }
-      raf.current = requestAnimationFrame(tick)
+    } catch (error) {
+      if (id !== session.current) return
+      if (recorder.current?.state === 'recording') recorder.current.stop()
+      recorder.current = null
+      teardown()
+      setRecording(false)
+      onError((error as Error).name === 'NotAllowedError' ? 'Microphone permission denied.' : 'Could not start the microphone.')
     }
-  }, [bars])
+  }, [bars, onError, teardown])
 
   // Ends the recording. Returns the note when `keep` is true, otherwise discards it.
   const stop = useCallback(
@@ -121,10 +121,11 @@ export function useVoiceRecorder(bars = 18) {
       setRecording(false)
       setLevels(idleLevels(bars))
 
-      if (!keep) return null
+      if (!keep || !audioUrl) return null
+      if (durationMs > 60_000) { URL.revokeObjectURL(audioUrl); onError('Voice notes must be 60 seconds or less.'); return null }
       return { durationMs, levels: downsample(history.current, NOTE_BARS), audioUrl }
     },
-    [bars, teardown],
+    [bars, teardown, onError],
   )
 
   return { recording, levels, start, stop }

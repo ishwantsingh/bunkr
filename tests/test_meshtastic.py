@@ -10,14 +10,14 @@ if AVAILABLE:
     from meshtastic.mesh_interface import MeshInterface
     from meshtastic.protobuf import mesh_pb2, portnums_pb2
     from pubsub import pub
-    from imageoverbt.meshtastic_transport import (Bridge, PORT, data_message,
+    from bunkr.meshtastic_transport import (Bridge, PORT, data_message,
         packet_priority, radio_size, unpack)
-from imageoverbt.contract import MAX_PACKET, frame
+from bunkr.contract import MAX_PACKET, frame
 
 FIXTURES = Path(__file__).resolve().parents[1] / 'fixtures/wire'
 
 
-@unittest.skipUnless(AVAILABLE, 'Install imageoverbt[meshtastic] for upstream integration checks')
+@unittest.skipUnless(AVAILABLE, 'Install bunkr[meshtastic] for upstream integration checks')
 class MeshtasticTests(unittest.TestCase):
     def setUp(self):
         # Actual upstream methods generate ToRadio packets; the hardware write is

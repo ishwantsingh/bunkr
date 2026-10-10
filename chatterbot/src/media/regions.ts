@@ -7,8 +7,8 @@ export const formatSeconds = (ms: number) =>
 export const isFull = (r: Pick<Region, 'w' | 'h'>) => r.w >= 0.999 && r.h >= 0.999
 
 // Share of the image covered by sharp regions (0–1), sampled on a grid so overlaps count once.
-export function renderedShare(regions: Region[]) {
-  const done = regions.filter((r) => r.status === 'done')
+export function renderedShare(regions: Pick<Region, 'x' | 'y' | 'w' | 'h'>[]) {
+  const done = regions
   if (done.some(isFull)) return 1
   const N = 40
   let hit = 0

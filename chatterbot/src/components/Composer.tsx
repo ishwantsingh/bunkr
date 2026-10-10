@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder'
 import { prepareImage } from '../media/image'
 import type { ImageNote, VoiceNote } from '../mesh/types'
@@ -9,15 +9,18 @@ type Props = {
   onSendText: (text: string) => void
   onSendVoice: (voice: VoiceNote) => void
   onSendImage: (image: ImageNote) => void
+  onError: (message: string) => void
 }
 
 // Text field plus a round button: mic when empty, send arrow when there's text.
 // The photo button inside the field sends a picked image as a tiny preview.
 // Tapping the mic morphs the button into a recording pill (cancel · waveform · send).
-export default function Composer({ onSendText, onSendVoice, onSendImage }: Props) {
+export default function Composer({ onSendText, onSendVoice, onSendImage, onError }: Props) {
   const [draft, setDraft] = useState('')
-  const { recording, levels, start, stop } = useVoiceRecorder()
+  const { recording, levels, start, stop } = useVoiceRecorder(18, onError)
   const fileInput = useRef<HTMLInputElement>(null)
+  const upload = useRef<AbortController | null>(null)
+  useEffect(() => () => upload.current?.abort(), [])
   const hasText = draft.trim().length > 0
 
   const sendText = () => {
@@ -33,8 +36,14 @@ export default function Composer({ onSendText, onSendVoice, onSendImage }: Props
 
   const pickImage = async (file: File | undefined) => {
     if (!file) return
-    onSendImage(await prepareImage(file))
-    if (fileInput.current) fileInput.current.value = ''
+    upload.current?.abort()
+    const controller = new AbortController()
+    upload.current = controller
+    try {
+      const image = await prepareImage(file, controller.signal)
+      if (!controller.signal.aborted) onSendImage(image)
+    } catch (e) { if (!controller.signal.aborted) onError((e as Error).message) }
+    finally { if (fileInput.current) fileInput.current.value = '' }
   }
 
   return (
@@ -73,7 +82,7 @@ export default function Composer({ onSendText, onSendVoice, onSendImage }: Props
         <input
           ref={fileInput}
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           hidden
           onChange={(e) => pickImage(e.target.files?.[0])}
         />

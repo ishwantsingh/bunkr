@@ -5,7 +5,7 @@
 ```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install -e ".[meshtastic]"
-.venv/bin/python -m imageoverbt.ui_server --port 8765
+.venv/bin/python -m bunkr.ui_server --port 8765
 ```
 
 Open http://127.0.0.1:8765. Install FFmpeg for voice. The server binds to loopback,
@@ -15,61 +15,89 @@ a local photo. See [TEXT_VOICE.md](TEXT_VOICE.md) for recording, import and play
 
 ## Experience
 
-Sender phone → five-node mesh → recipient phone. The preview sends automatically
-on first load. **Send again** repeats it; **Reset demo** resets the session.
-Drag or resize the crop box and click **Request section** above the image. The
-binary request crosses the reverse mesh before encoding starts. Six independent
-source crops sharpen the selected region as each passes CRC, SHA-256, decoding
-and dimensions checks. Previously verified sections remain visible. Arrow keys
-move the box; Shift+arrows resize it.
+The UI is built directly from `chatterbot/src/`: its two phones, gradient/grain,
+local serif fonts, bokeh background, image expansion/collapse, waveform morph,
+floating mesh, hover expansion, animated gear switcher and sliding settings panel.
+The earlier vanilla styling port is removed. No controls are added to the phones
+beyond those in the reference. Reduced-motion preferences shorten animations.
 
-### Import a photo
+- Either phone can type a message and press Enter or the send arrow.
+- The photo icon opens a file picker; choosing a photo prepares and immediately
+  queues its real preview. The recipient sees it only after reassembly,
+  CRC/SHA-256 verification, decoding and dimensions checks.
+- Open the received image to expand it from its thumbnail. Drag to draw one or
+  more selections; each has the reference remove and render-arrow controls.
+  Six independent source tiles sharpen a requested area as each verifies,
+  before the full selection finishes. The rendered percentage includes pieces
+  already received. Close collapses back to the thumbnail. **Render full**
+  requests the entire source through the same pipeline.
+- An empty composer shows the microphone. Recording morphs it into the reference
+  cancel/waveform/send pill. Permission failure reports an error without making
+  sample audio. The recipient's waveform shows packet progress; playback stays
+  disabled until the whole Opus stream verifies and decodes.
+- Hover over the floating mesh card to reveal links, live packet animations,
+  loss pulses and measured statistics. Drag nodes while the map is expanded.
+  The gear slides open radio preset/loss and per-node position/range/online
+  settings. Its clock tab shows the real transmission timeline.
+- A missing route retains progress and shows “Waiting for route” with no ETA.
+  Restoring online state/range resumes the transfer. Presets and loss affect the
+  actual shared engine. Seed applies on **Reset**, which clears new messages,
+  selections, received URLs and packet activity and restores default node layout.
+  It also cancels recordings, pending imports and queued/active transfers.
 
-Click **Upload photo** on the sender, select a JPG, PNG, WebP or HEIC/HEIF file,
-then click **Send photo**. Import prepares the source and preview locally; it does
-not deliver anything to the recipient. The preview, section requests, detail tiles
-and completion ACKs still cross the same mesh. Photo selection preserves existing
-text/voice chat and clears the previous image's received detail and receipts.
+The reference's opening conversation is example content; it adds no fabricated
+packet metrics. Live messages show real received bytes, packets, route and retries.
+There is no simulated SNR measurement. Transfers run serially at 40× modeled time;
+short on-air hops retain visible animation durations. Cost labels are approximate
+pre-request estimates based on the existing six-tile, 8 KB-per-tile encoding
+budget, replaced by actual encoded crop bytes after the request reaches the sender.
+They include approximate framing, hops, control traffic and 20% expected loss;
+actual cost depends on content and current loss. Receipt confirmation still requires the real
+return ACK and server validation, independently of recipient-local verification.
 
-The local upload endpoint accepts at most **12 MiB / 50 megapixels**. It checks the
-actual image content, rejects corrupt or animated files, applies EXIF orientation
-and retains an orientation-corrected lossless source. Portrait and landscape photos
-keep their aspect ratio. The local sender display uses a JPEG thumbnail; crops
-always come from the retained source, not that thumbnail or the transmitted preview.
+## Photo import
 
-Invalid imports leave the current photo intact. Reset cancels an in-flight import;
-late upload results cannot replace the current photo. Every crop request identifies
-its source explicitly. Reset keeps a successfully imported photo selected; a page
-reload returns to the configured sample. Imported files live only in the demo's
-temporary local database, which is removed when the server stops.
+The local upload endpoint accepts **12 MiB / 50 megapixels**. It checks actual
+image content, rejects corrupt/animated files, applies EXIF orientation and
+retains an orientation-corrected lossless source. Each selected photo creates
+its own message and immutable image ID. Older photos and their verified detail
+remain in the conversation. Invalid uploads leave existing messages intact.
+Reset/unmount aborts pending uploads and ignores late results. Source images are
+never used for recipient rendering: only verified preview/detail blobs appear.
 
-`POST /api/photo` accepts raw image bytes and returns the normal media demo envelope
-plus an immutable `image_id` and `source_url`. `POST /api/crop` accepts `image_id`
-with its bounds and request ID. `GET /api/source.jpg?image_id=…` serves that source's
-browser thumbnail. Filename text stays in the browser and is never used as a path.
-HEIC decoding uses the [Pillow HEIF plugin](https://pillow-heif.readthedocs.io/en/stable/pillow-plugin.html),
-installed with the application's dependencies. Reinstall with `pip install -e .`
-when updating an existing environment.
+`POST /api/photo` accepts binary bytes and returns the normal envelope plus an
+immutable `image_id` and `source_url`. Every `POST /api/crop` explicitly supplies
+that image ID, bounds and request ID. `GET /api/source.jpg?image_id=…` supplies
+only the sender's thumbnail. Filename text is never used as a filesystem path.
+HEIC decoding uses the installed Pillow HEIF plugin. Imports stay in the demo's
+temporary local database, removed when the server stops.
 
-Both phones can send text and compressed Opus voice. The recipient displays or
-plays only verified content. The sender confirms receipt only after the matching
-application ACK crosses the mesh back to the sender and is validated by the API.
+## Frontend development
 
-The map observes the shared `mesh-simulation` engine's actual packet events:
+The existing Python endpoints, media codecs, binary contract and mesh engine
+are unchanged. `chatterbot/src/mesh/runtime.mjs` connects the actual reference
+components to `bunkr/ui/network.mjs` and `protocol.mjs`; mock route/timing
+functions are removed. Verified tiles render immediately and independently.
 
-- Default route: A → B → C → D. **Disable relay C** reroutes through B → E → D.
-- Drag any node on the map; arrow keys move a focused node by 10 map units. Select a node to edit coordinates, mutual range and online state. Removing B isolates A; restoring it resumes.
-- The middle panel adapts the full `mesh-ui` workspace from `mesh-simulation`: movable nodes and range rings, actual packet inspector and hop trace, received/missing chunk grid, separate sender/receiver knowledge, timeline and controls. Both phone screens retain their messaging and photo-import flows.
-- Radio presets change modeled transmission time. Loss applies independently per hop (0–100%).
-- Disconnect/pause preserves received chunks and freezes progress. No arrival promise is made without a route.
-- Replay speed offers 40× / 80× / 160×. It changes playback of simulated time, not the radio rate or measured byte counts.
-- **Next event** pauses autoplay and advances exactly one engine event. Change the scenario seed and **Reset simulation** to replay a reproducible run. Reset also clears phone transfers and retains the selected photo.
-- Remaining time is an approximate range for the current transfer using queued bytes, remaining hops, radio rate and expected loss retries; it excludes future requests and local codec work. Pause, disconnection or an unavailable route is explicit.
-- Timeline times are simulated elapsed time. Counters include every hop, retry and control packet.
+With Node.js **22.12+**:
+
+```sh
+cd chatterbot
+npm ci
+npm run build
+npm run lint
+```
+
+The build type-checks the UI and writes bundled assets to `bunkr/ui/client/`
+plus the server's root `index.html`. Commit these generated assets alongside
+source changes. Python wheels include them and the locally licensed fonts;
+users running the Python server need neither Node.js nor internet access.
+For live editing, start the Python server on 8765, then `npm run dev` in
+`chatterbot/`; Vite proxies API and font requests to it.
 
 ## Engine and packet integration
 
-The canonical engine is `imageoverbt/ui/mesh/simulator.mjs`, imported from branch
+The canonical engine is `bunkr/ui/mesh/simulator.mjs`, imported from branch
 `mesh-simulation`. `network.mjs` adapts the existing native version-2 binary media
 contract to it without replacing the content with fixture IDs or JSON wrappers.
 `mesh-ui/simulator.mjs` re-exports the same engine for the standalone demo.
@@ -117,6 +145,7 @@ node --test tests/ui/*.test.mjs mesh-ui/simulator.test.mjs
 
 Checks cover native image/text/voice reconstruction over 20% per-hop loss,
 reverse requests/receipts, missing-chunk recovery, bounded failure, interrupted
-routes, range changes, preset timing and byte accounting, paused single-event stepping,
-inspector verification/receipt gates and rate/loss-aware estimates, plus the original
-standalone engine scenarios. CI runs both suites.
+routes, range changes, preset timing and byte accounting, legacy inspector/stepping logic, plus the original standalone engine scenarios.
+The reference adapter adds integration tests for progressive tile verification,
+corruption rejection, actual text/voice transport, reverse receipts, no-route
+recovery, browser fetch binding and reset cancellation. CI runs both suites.

@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {Network} from '../../imageoverbt/ui/network.mjs';
-import {nodeChange,mediaProgress,remainingEstimate} from '../../imageoverbt/ui/mesh/panel.mjs';
-import {parseManifest,makeAck} from '../../imageoverbt/ui/protocol.mjs';
+import {Network} from '../../bunkr/ui/network.mjs';
+import {nodeChange,mediaProgress,remainingEstimate} from '../../bunkr/ui/mesh/panel.mjs';
+import {parseManifest,makeAck} from '../../bunkr/ui/protocol.mjs';
 const manifest=readFileSync(new URL('../../fixtures/wire/preview.manifest.bin',import.meta.url)).toString('hex');
 const packets=JSON.parse(readFileSync(new URL('../../fixtures/wire/preview.packets.json',import.meta.url)));
 const enqueue=n=>n.enqueue([{wire:manifest,manifest:true},...packets.map(wire=>({wire}))]);

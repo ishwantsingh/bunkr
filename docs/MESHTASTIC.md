@@ -49,7 +49,7 @@ the budget. The bridge sends only port/payload in `Data` and sets no reply field
 python3 -m venv .venv
 .venv/bin/python -m pip install -e ".[meshtastic]"
 .venv/bin/python -m unittest discover -s tests -v
-.venv/bin/python -m imageoverbt.meshtastic_transport
+.venv/bin/python -m bunkr.meshtastic_transport
 ```
 
 The integration demo wraps the committed crop request, preview/crop manifests,
@@ -70,13 +70,13 @@ frames. See [TEXT_VOICE.md](TEXT_VOICE.md) for their codec and persistence contr
 
 ## Adapter API
 
-`imageoverbt.meshtastic_transport.Bridge` accepts an already-connected upstream
+`bunkr.meshtastic_transport.Bridge` accepts an already-connected upstream
 `MeshInterface`, a local uint32 node number and a receive callback. Construction
 opens no connection. The caller owns its interface, database and outgoing queue.
 
 ```python
 from queue import SimpleQueue
-from imageoverbt.meshtastic_transport import Bridge
+from bunkr.meshtastic_transport import Bridge
 
 # interface is an upstream TCPInterface, SerialInterface or BLEInterface.
 # local_node and remote_node come from the connected device/node database.
@@ -93,7 +93,7 @@ packets. It validates the application frame and protobuf budget before calling
 No radio connection is opened by the offline demo or tests.
 
 Private app port 256 is the upstream experimental default, not a globally unique
-registered imageoverbt port. Other applications sharing it may collide; use an
+registered bunkr port. Other applications sharing it may collide; use an
 isolated demo deployment. Incoming frames must pass version/type/CRC checks.
 The bridge filters other ports, destinations, channel indices and interfaces.
 For SDK callbacks it reads the official `MeshPacket` under the `raw` dictionary

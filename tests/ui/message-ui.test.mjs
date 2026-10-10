@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {webcrypto} from 'node:crypto';
-import {mountMessages} from '../../imageoverbt/ui/messages.mjs';
+import {mountMessages} from '../../bunkr/ui/messages.mjs';
 const fixture=JSON.parse(readFileSync(new URL('../../fixtures/messages/messages.json',import.meta.url))).unicode;
 fixture.radio_bytes=fixture.packets.map(wire=>wire.length/2+34);
 if(!globalThis.crypto)globalThis.crypto=webcrypto;
@@ -59,4 +59,18 @@ test('reset releases microphone tracks and cancels sending the recording',async(
   const label=new Node();h.get('alex-record').querySelector=()=>label;
   await h.get('alex-record').trigger('click');assert.equal(label.textContent,'Stop & send');
   h.reset();assert.ok(stopped>0);assert.equal(h.get('alex-chat').children.length,0);assert.equal(h.acks(),0);
+});
+test('cancelling a voice note releases the microphone and sends no message',async()=>{
+  const h=setup();h.ui.ready(true);let stopped=0;
+  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{mediaDevices:{getUserMedia:async()=>({getTracks:()=>[{stop(){stopped++;}}]})}}});
+  class Recorder{static isTypeSupported(){return true;}constructor(){this.state='inactive';}start(){this.state='recording';}stop(){this.state='inactive';this.onstop();}}
+  window.MediaRecorder=globalThis.MediaRecorder=Recorder;
+  const label=new Node();h.get('alex-record').querySelector=()=>label;
+  await h.get('alex-record').trigger('click');
+  assert.equal(label.textContent,'Stop & send');
+  assert.equal(h.get('sam-record').disabled,true);
+  h.ui.cancelRecording();
+  assert.ok(stopped>0);assert.equal(label.textContent,'Record');
+  assert.equal(h.get('alex-chat').children.length,0);assert.equal(h.calls(),0);
+  assert.equal(h.get('alex-send').disabled,false);assert.equal(h.get('sam-record').disabled,false);
 });

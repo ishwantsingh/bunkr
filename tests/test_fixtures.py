@@ -3,9 +3,9 @@ import json
 from pathlib import Path
 import unittest
 
-from imageoverbt.contract import Manifest, Request
-from imageoverbt.events import Event, EventType
-from imageoverbt.media import Store
+from bunkr.contract import Manifest, Request
+from bunkr.events import Event, EventType
+from bunkr.media import Store
 
 FIXTURES = Path(__file__).resolve().parents[1] / 'fixtures'
 

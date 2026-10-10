@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {webcrypto} from 'node:crypto';
 import {deflateSync} from 'node:zlib';
-import {parseMessageManifest,Reassembler,decodeMessageText,makeAck,fromHex,toHex,crc32,validateVoiceHeader} from '../../imageoverbt/ui/protocol.mjs';
-import {Network} from '../../imageoverbt/ui/network.mjs';
+import {parseMessageManifest,Reassembler,decodeMessageText,makeAck,fromHex,toHex,crc32,validateVoiceHeader} from '../../bunkr/ui/protocol.mjs';
+import {Network} from '../../bunkr/ui/network.mjs';
 if(!globalThis.crypto)globalThis.crypto=webcrypto;
 const fixtures=JSON.parse(readFileSync(new URL('../../fixtures/messages/messages.json',import.meta.url)));
 for(const [name,f] of Object.entries(fixtures))test(`Python ${name} packets reconstruct exactly through 20% loss on three hops`,async()=>{

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CODEC2_BPS, voiceBytes } from '../mesh/mockMesh'
+
 import type { VoiceNote } from '../mesh/types'
 
 const formatDuration = (ms: number) => {
@@ -9,12 +9,12 @@ const formatDuration = (ms: number) => {
 
 type Props = {
   voice: VoiceNote
-  available?: number // 0–1 share of the clip that has arrived; Codec2 is constant-bitrate, so bytes map to time
+  available?: number // 0–1 share of packets received; playback waits for full verification
 }
 
 // Voice note: play/pause, waveform and on-air size. While packets are still
-// arriving, unreceived bars are greyed out and playback stops at the edge of
-// what has arrived, resuming by itself when the next packet lands.
+// arriving, unreceived bars are greyed out. The recipient gets a playable URL
+// only after the entire Opus stream has been reconstructed and verified.
 export default function VoiceBubble({ voice, available = 1 }: Props) {
   const audio = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
@@ -82,7 +82,7 @@ export default function VoiceBubble({ voice, available = 1 }: Props) {
   const bars = voice.levels.length
   const played = Math.floor(progress * bars)
   const received = complete ? bars : Math.floor(available * bars)
-  const totalBytes = voiceBytes(voice.durationMs)
+  const totalBytes = voice.bytes ?? Math.ceil(voice.durationMs * 1.5)
 
   return (
     <div className="relative grid grid-cols-[auto_auto] items-center gap-x-[3cqw] gap-y-[1cqw]">
@@ -111,7 +111,7 @@ export default function VoiceBubble({ voice, available = 1 }: Props) {
       {/* Caption sits under the waveform, so the play button centres on the bars alone */}
       <p className="col-start-2 font-sans text-[2.6cqw] text-white/50">
         {complete
-          ? `${formatDuration(voice.durationMs)} · Codec2 ${CODEC2_BPS} · ${totalBytes} B`
+          ? `${formatDuration(voice.durationMs)} · Opus · ${totalBytes} B`
           : `${formatDuration(availableSec * 1000)} of ${formatDuration(voice.durationMs)} · ${Math.round(
               available * totalBytes,
             )} / ${totalBytes} B${waiting ? ' · waiting for next packet' : ''}`}
