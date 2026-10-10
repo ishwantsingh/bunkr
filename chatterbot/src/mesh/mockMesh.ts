@@ -1,3 +1,4 @@
+import { letterOf, mesh } from './network'
 import type { DeliveryStats, Transit } from './types'
 
 // Stand-in for the real mesh simulation: walks each packet of a message hop by
@@ -31,6 +32,9 @@ const meanHopMs = (bytes: number, packets: number, kbps: number) =>
 
 const randomSnr = () => Math.round((Math.random() * 14 - 4) * 10) / 10
 
+// What runHops reports to the mesh card's event log.
+type HopLog = { path: string[]; tag: string; bytes: number; kbps: number }
+
 // Walks one phase hop by hop with loss and resends.
 // Returns the hop index it got stuck on, or null if every hop got through.
 async function runHops(
@@ -40,16 +44,32 @@ async function runHops(
   etaFor: (hop: number) => number,
   onTransit: (t: Transit) => void,
   onLoss: () => void = () => {},
+  log?: HopLog,
 ) {
   for (let hop = 0; hop < hops; hop++) {
+    const from = log?.path[hop] ?? ''
+    const to = log?.path[hop + 1] ?? ''
+    const link = `${letterOf(from)} → ${letterOf(to)}`
     for (let attempt = 1; ; attempt++) {
       const attemptMs = tryMs()
       const transit = { phase, hop, hops, attempt, attemptMs, lost: false, etaMs: etaFor(hop) }
       onTransit(transit)
+      if (log) {
+        mesh.emit({ kind: 'air', title: 'On air', detail: `${log.tag}: ${link}`, from, to, durationMs: attemptMs })
+        mesh.addTraffic(log.bytes + HEADER_BYTES, airtimeMs(log.bytes, log.kbps))
+      }
       await sleep(attemptMs)
 
-      if (Math.random() >= LOSS_RATE) break
+      if (Math.random() >= LOSS_RATE) {
+        if (log)
+          mesh.emit({ kind: 'hop', title: 'Hop received', detail: `${log.tag} reached ${letterOf(to)}`, from, to })
+        break
+      }
       onLoss()
+      if (log) {
+        mesh.addLostHop()
+        mesh.emit({ kind: 'lost', title: 'Hop lost', detail: `${log.tag}: ${link}, try ${attempt}`, from, to })
+      }
       onTransit({ ...transit, lost: true })
       if (attempt >= MAX_TRIES) return hop
       await sleep(RESEND_TIMEOUT_MS)
@@ -66,7 +86,7 @@ type SendCallbacks = {
   onFailed: (reason: string) => void
 }
 
-export async function simulateSend(route: string[], bytes: number, kbps: number, cb: SendCallbacks) {
+export async function simulateSend(route: string[], bytes: number, kbps: number, cb: SendCallbacks, tag = 'message') {
   const hops = route.length - 1
   const packets = packetCount(bytes)
   const perPacketBytes = Math.min(bytes, PACKET_BYTES)
@@ -74,6 +94,9 @@ export async function simulateSend(route: string[], bytes: number, kbps: number,
   const avgAck = meanHopMs(ACK_BYTES, 1, kbps)
   const start = performance.now()
   let resends = 0
+  const back = [...route].reverse()
+  const routeText = route.map(letterOf).join(' → ')
+  mesh.emit({ kind: 'sent', title: 'Sent', detail: `${tag} · ${bytes} B · ${packets} pkt via ${routeText}` })
 
   // Packets go one at a time across every hop, so the recipient gets them
   // progressively (e.g. a voice note becomes playable chunk by chunk).
@@ -85,15 +108,19 @@ export async function simulateSend(route: string[], bytes: number, kbps: number,
       (hop) => ((packets - packet) * hops - hop) * avgPacketHop + hops * avgAck,
       (t) => cb.onTransit({ ...t, packet, packets }),
       () => resends++,
+      { path: route, tag: packets > 1 ? `${tag} ${packet + 1}/${packets}` : tag, bytes: perPacketBytes, kbps },
     )
     if (stuck !== null) {
       const which = packets > 1 ? `packet ${packet + 1} of ${packets} ` : ''
-      cb.onFailed(`Not delivered · ${which}lost at hop ${stuck + 1} after ${MAX_TRIES} tries`)
+      const reason = `Not delivered · ${which}lost at hop ${stuck + 1} after ${MAX_TRIES} tries`
+      mesh.emit({ kind: 'failed', title: 'Gave up', detail: reason })
+      cb.onFailed(reason)
       return
     }
     cb.onChunk?.(packet + 1)
   }
 
+  mesh.emit({ kind: 'arrived', title: 'Arrived', detail: `${tag} reached ${letterOf(route[hops])}` })
   cb.onArrive({
     route,
     packets,
@@ -109,12 +136,21 @@ export async function simulateSend(route: string[], bytes: number, kbps: number,
     () => hopMs(ACK_BYTES, 1, kbps),
     (hop) => (hops - hop) * avgAck,
     cb.onTransit,
+    undefined,
+    { path: back, tag: 'receipt', bytes: ACK_BYTES, kbps },
   )
   if (stuckAck !== null) {
     // The recipient may well have it, but we can't confirm that.
-    cb.onFailed(`Not confirmed · no ACK after ${MAX_TRIES} tries`)
+    const reason = `Not confirmed · no ACK after ${MAX_TRIES} tries`
+    mesh.emit({ kind: 'failed', title: 'No receipt', detail: reason })
+    cb.onFailed(reason)
     return
   }
+  mesh.emit({
+    kind: 'delivered',
+    title: 'Receipt confirmed',
+    detail: `${letterOf(route[0])} received ${letterOf(route[hops])}'s confirmation`,
+  })
   cb.onDelivered()
 }
 
@@ -139,9 +175,13 @@ export async function simulatePull(route: string[], bytes: number, kbps: number,
     () => hopMs(ACK_BYTES, 1, kbps),
     (hop) => (hops - hop) * avgRequest + hops * avgData,
     cb.onTransit,
+    undefined,
+    { path: [...route].reverse(), tag: 'image request', bytes: ACK_BYTES, kbps },
   )
   if (stuckRequest !== null) {
-    cb.onFailed(`Request lost at hop ${stuckRequest + 1} after ${MAX_TRIES} tries`)
+    const reason = `Request lost at hop ${stuckRequest + 1} after ${MAX_TRIES} tries`
+    mesh.emit({ kind: 'failed', title: 'Gave up', detail: reason })
+    cb.onFailed(reason)
     return
   }
 
@@ -151,11 +191,16 @@ export async function simulatePull(route: string[], bytes: number, kbps: number,
     () => hopMs(perPacketBytes, packets, kbps),
     (hop) => (hops - hop) * avgData,
     cb.onTransit,
+    undefined,
+    { path: route, tag: `image area (${bytes} B)`, bytes: perPacketBytes, kbps },
   )
   if (stuckData !== null) {
-    cb.onFailed(`Not received · lost at hop ${stuckData + 1} after ${MAX_TRIES} tries`)
+    const reason = `Not received · lost at hop ${stuckData + 1} after ${MAX_TRIES} tries`
+    mesh.emit({ kind: 'failed', title: 'Gave up', detail: reason })
+    cb.onFailed(reason)
     return
   }
+  mesh.emit({ kind: 'arrived', title: 'Area received', detail: `image area reached ${letterOf(route[hops])}` })
   cb.onArrive()
 }
 

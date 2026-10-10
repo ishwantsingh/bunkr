@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import BokehBackground from './components/BokehBackground'
 import ChatScreen from './components/ChatScreen'
+import MeshCard from './components/MeshCard'
 import { type NodeInfo } from './components/NodeOrb'
 import PhoneFrame from './components/PhoneFrame'
 import { packetCount, pastStats, simulatePull, simulateSend, voiceBytes } from './mesh/mockMesh'
@@ -99,13 +100,19 @@ export default function App() {
       },
     ])
 
-    simulateSend(route, bytes, KBPS, {
-      onTransit: (transit) => patch({ delivery: { status: 'sending', transit } }),
-      onChunk: (received) => patch({ received }),
-      onArrive: (stats) => patch({ stats }),
-      onDelivered: () => patch({ delivery: { status: 'delivered' } }),
-      onFailed: (reason) => patch({ delivery: { status: 'failed', reason } }),
-    })
+    simulateSend(
+      route,
+      bytes,
+      KBPS,
+      {
+        onTransit: (transit) => patch({ delivery: { status: 'sending', transit } }),
+        onChunk: (received) => patch({ received }),
+        onArrive: (stats) => patch({ stats }),
+        onDelivered: () => patch({ delivery: { status: 'delivered' } }),
+        onFailed: (reason) => patch({ delivery: { status: 'failed', reason } }),
+      },
+      content.image ? 'image preview' : content.voice ? 'voice note' : 'text',
+    )
   }
 
   const updateRegions = (messageId: number, update: (regions: Region[]) => Region[]) =>
@@ -139,6 +146,7 @@ export default function App() {
   return (
     <main className="relative flex h-dvh items-center justify-between overflow-hidden bg-[#1c1c1e] p-8">
       <BokehBackground />
+      <MeshCard />
 
       <div className="relative z-10 flex h-full w-full items-center justify-between">
         {people.map((person) => (
