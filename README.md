@@ -2,9 +2,26 @@
 
 **A photo arrives as a tiny preview. Tap the unreadable trail sign, and the network prioritizes that crop.**
 
-imageoverbt is an image-only, off-grid messaging concept for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
+imageoverbt is an off-grid messaging prototype for text, voice notes and recipient-directed images for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
 
-**Status:** The image mesh simulator and middle network UI are implemented on the `mesh-simulation` branch. The sender and receiver phone screens and production image encoder are separate team work. The simulator currently uses local SVG image fixtures.
+**Status:** The phone UI mock supports text, voice notes, and recipient-directed images over its mock transport. The media pipeline supports JPEG/WebP previews, source-photo crops, bounded packets, reconstruction, and verified acknowledgments. A separate five-node software mesh simulator and middle network UI are available in `mesh-ui/`. The phone UI and media pipeline have not yet been connected to that simulator; physical radio integration remains planned. See [text/voice setup](docs/TEXT_VOICE.md) and [media contract](docs/MEDIA_CONTRACT.md).
+
+See the [architecture diagram and built-versus-planned breakdown](docs/ARCHITECTURE.md).
+
+Run `python3 -m unittest discover -s tests -v` and `python3 -m imageoverbt.demo` after installing with `python3 -m pip install -e .`. The offline demo writes a real trail-sign comparison and measured codec results to `demo-output/`. See [the media contract and setup instructions](docs/MEDIA_CONTRACT.md).
+
+Meshtastic interoperability uses the official [Python SDK](https://github.com/meshtastic/python) and generated [protobuf definitions](https://github.com/meshtastic/protobufs). Install `python3 -m pip install -e ".[meshtastic]"` and run `python3 -m imageoverbt.meshtastic_transport` for an offline protocol check. Frames are capped at 220 bytes to leave room for the Meshtastic wrapper and encryption overhead. See [upstream integration and simulator handoff](docs/MESHTASTIC.md).
+
+## Try the interactive mock
+
+Run `python3 -m imageoverbt.ui_server` after installation and open
+[localhost:8765](http://127.0.0.1:8765). Two phone chats surround an animated
+five-node mesh. Drag the recipient’s crop box and click **Request section** to
+watch verified source detail arrive progressively. Type messages on either phone,
+record/import a voice note, or click **Try voice** for a speech sample. Voice
+requires FFmpeg with libopus on the server. Loss, relay removal,
+disconnection, pause, reset and another-section requests are interactive.
+See [UI_MOCK.md](docs/UI_MOCK.md) for setup, controls and simulation limits.
 
 ## The use case
 
@@ -38,7 +55,7 @@ Sender's photo -> Small preview -> Simulated radio mesh -> Recipient
       +-> Compressed crop -> Prioritized packets -> Verified detail
 ```
 
-The first implementation is entirely software. The five-node map and simulator are built; the iPhone-style sender and receiver screens are separate team work. The intended hardware model is a phone connected to a CHRP radio accessory, with LoRa between accessories.
+The current implementations are software only. The phone UI mock and standalone five-node simulator are separate components awaiting integration. The intended hardware model is a phone connected to a CHRP radio accessory, with LoRa between accessories.
 
 ### Run the mesh simulator
 
@@ -105,11 +122,11 @@ Show the sender, recipient, and five-node mesh together. Configure a three-hop p
 
 Compare recipient-directed delivery with sequential full-image delivery using the same source photos, codec settings, radio model, and reproducible loss scenarios. Report time to preview, time from selection to readable detail, total transmitted bytes and airtime including control traffic and retries, and completion rate for requested representations. Include request round-trip time in the comparison.
 
-Mesh tests now cover packet size, byte verification, missing-chunk recovery, duplicate request handling, requested-crop priority, relay interruption, disconnection, and acknowledgment-driven sender status. Media encoding and phone-screen integration checks remain planned.
+Media tests cover packet-size limits, reconstruction, corruption, duplicate/reordered chunks, persistent recovery, repeated requests, EXIF orientation, cache reuse, and acknowledgments. Standalone mesh tests cover packet size, byte verification, missing-chunk recovery, duplicate requests, requested-crop priority, relay interruption, disconnection, and sender receipt status. Tests for the combined phone UI, media pipeline, and mesh engine remain to be built.
 
 ## Scope
 
-The initial product covers **photos, previews, and requested crops**. Text chat, voice notes, video, cloud services, and physical radio integration are outside this first implementation. Background full-image refinement is secondary to delivering the detail the recipient selects.
+The current prototype covers **text, voice notes, photos, previews, and requested crops**. Video, cloud services, and physical radio integration remain outside this implementation. Background full-image refinement is secondary to delivering the detail the recipient selects.
 
 ## References
 
