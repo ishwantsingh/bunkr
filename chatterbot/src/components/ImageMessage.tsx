@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { estimatePullMs } from '../mesh/mockMesh'
+import { estimatePullMs } from '../mesh/estimates'
 import type { Message } from '../mesh/types'
 import { formatBytes, formatSeconds, renderedShare, isFull } from '../media/regions'
 import ImageCanvas from './ImageCanvas'
@@ -21,7 +21,7 @@ export default function ImageMessage({ message: m, mine, kbps, hidden, onOpen, o
   const { image, route } = m
   const hops = route.length - 1
 
-  const share = renderedShare(image.regions)
+  const share = renderedShare(image.tiles)
   const received =
     image.previewBytes + image.regions.filter((r) => r.status === 'done').reduce((a, r) => a + (r.bytes ?? 0), 0)
   const pulling = image.regions.find((r) => r.status === 'pulling')

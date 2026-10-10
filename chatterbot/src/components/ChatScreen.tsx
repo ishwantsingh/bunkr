@@ -18,7 +18,7 @@ function StatsLine({ stats, alignRight }: { stats: DeliveryStats; alignRight: bo
     `${packets} ${packets === 1 ? 'pkt' : 'pkts'}`,
     `${bytes} B`,
     `${(transitMs / 1000).toFixed(1)} s`,
-    `SNR ${snr.toFixed(1)} dB`,
+    ...(snr === undefined ? [] : [`SNR ${snr.toFixed(1)} dB`]),
     ...(resends ? [`${resends} ${resends === 1 ? 'resend' : 'resends'}`] : []),
   ].join(' · ')
 
@@ -74,6 +74,7 @@ type Props = {
   onRegionsChange: (messageId: number, update: (regions: Region[]) => Region[]) => void
   onPull: (message: Message, regions?: Region[], isNew?: boolean) => void
   kbps: number
+  onError: (message: string) => void
 }
 
 // Phone screen content. Sizes use cqw so the UI scales with the PhoneFrame.
@@ -88,6 +89,7 @@ export default function ChatScreen({
   onRegionsChange,
   onPull,
   kbps,
+  onError,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -95,7 +97,7 @@ export default function ChatScreen({
   const viewed = messages.find((m) => m.id === viewer?.id)
 
   // The recipient only sees a message once it has actually arrived.
-  const visible = messages.filter((m) => m.from === me || m.stats || (m.voice && m.received))
+  const visible = messages.filter((m) => m.example || m.from === me || m.stats || (m.voice && m.received))
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
@@ -156,7 +158,7 @@ export default function ChatScreen({
               ) : m.voice ? (
                 // Voice notes sit directly on the background, no card
                 <div className={`flex flex-col gap-[1cqw] ${mine ? 'items-end' : 'items-start'}`}>
-                  <VoiceBubble voice={m.voice} available={mine || m.stats ? 1 : (m.received ?? 0) / (m.packets ?? 1)} />
+                  <VoiceBubble voice={mine || m.stats ? m.voice : {...m.voice, audioUrl: undefined}} available={mine || m.stats ? 1 : (m.received ?? 0) / (m.packets ?? 1)} />
                   <p className="px-[1cqw] font-sans text-[2.8cqw] text-white/50">{formatSentAt(m.sentAt)}</p>
                 </div>
               ) : (
@@ -192,7 +194,7 @@ export default function ChatScreen({
         />
       )}
 
-      <Composer onSendText={onSendText} onSendVoice={onSendVoice} onSendImage={onSendImage} />
+      <Composer onError={onError} onSendText={onSendText} onSendVoice={onSendVoice} onSendImage={onSendImage} />
     </div>
   )
 }

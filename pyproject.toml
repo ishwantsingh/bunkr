@@ -21,4 +21,4 @@ imageoverbt-ui = "imageoverbt.ui_server:main"
 include = ["imageoverbt*"]
 
 [tool.setuptools.package-data]
-imageoverbt = ["ui/*.html", "ui/*.css", "ui/*.mjs", "ui/mesh/*.mjs", "ui/mesh/*.css", "ui/fonts/*.ttf", "ui/fonts/*-OFL.txt"]
+imageoverbt = ["ui/*.html", "ui/*.css", "ui/*.mjs", "ui/mesh/*.mjs", "ui/mesh/*.css", "ui/fonts/*.ttf", "ui/fonts/*-OFL.txt", "ui/client/*.html", "ui/client/*.svg", "ui/client/assets/*.js", "ui/client/assets/*.css"]

@@ -1,8 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
-// UI-only state for the mesh card: a fixed mock node layout, control values and
-// a log of events the mock mesh reports. Nothing here drives packet behaviour;
-// the real simulation lives in the backend and can feed the same events later.
+// Reference mesh-card state. Controls feed the shared packet engine through
+// MediaRuntime, and counters/links/events come back from its actual transmissions.
 
 export type MeshNode = {
   id: string // Meshtastic-style node ID, matching the routes in messages
@@ -29,10 +28,7 @@ export type MeshEvent = {
 
 export const PRESETS = [
   { name: 'Short Turbo', kbps: 21.88 },
-  { name: 'Short Fast', kbps: 10.94 },
-  { name: 'Short Slow', kbps: 6.25 },
   { name: 'Medium Fast', kbps: 3.52 },
-  { name: 'Medium Slow', kbps: 1.95 },
   { name: 'Long Fast', kbps: 1.07 },
   { name: 'Long Moderate', kbps: 0.34 },
 ]
@@ -49,26 +45,16 @@ const defaultNodes = (): MeshNode[] => [
   { id: '!7c1e', letter: 'E', name: 'Maya', x: 138, y: 58, range: 60, online: true },
 ]
 
-// Mock "reachable" links drawn on the map: every pair the mock routes can use.
-export const MOCK_LINKS: [string, string][] = [
-  ['!a3f2', '!19b4'],
-  ['!a3f2', '!e05d'],
-  ['!a3f2', '!4a8c'],
-  ['!19b4', '!e05d'],
-  ['!19b4', '!4a8c'],
-  ['!e05d', '!4a8c'],
-  ['!19b4', '!7c1e'],
-  ['!e05d', '!7c1e'],
-  ['!4a8c', '!7c1e'],
-]
-
-type State = {
+export type State = {
   preset: string
   lossPct: number
   seed: number
   nodes: MeshNode[]
   events: MeshEvent[]
   stats: { bytesOnAir: number; airtimeMs: number; lostHops: number }
+  inFlight: number
+  timeMs: number
+  links: [string, string][]
   startedAt: number
 }
 
@@ -79,6 +65,9 @@ const initial = (keep?: Partial<State>): State => ({
   nodes: defaultNodes(),
   events: [],
   stats: { bytesOnAir: 0, airtimeMs: 0, lostHops: 0 },
+  inFlight: 0,
+  timeMs: 0,
+  links: [],
   startedAt: performance.now(),
 })
 
@@ -91,20 +80,24 @@ const set = (patch: Partial<State>) => {
   listeners.forEach((l) => l())
 }
 
+let controls: {change: (settings: State) => void; reset: (settings: State) => void} | null = null
 export const mesh = {
+  connect: (handlers: typeof controls) => { controls = handlers },
+  observe: (patch: Partial<State>) => set(patch),
   get: () => state,
   subscribe: (l: () => void) => {
     listeners.add(l)
     return () => listeners.delete(l)
   },
 
-  setPreset: (preset: string) => set({ preset }),
-  setLossPct: (lossPct: number) => set({ lossPct }),
+  setPreset: (preset: string) => { set({ preset }); controls?.change(state) },
+  setLossPct: (lossPct: number) => { set({ lossPct }); controls?.change(state) },
   setSeed: (seed: number) => set({ seed }),
   updateNode: (id: string, patch: Partial<MeshNode>) =>
-    set({ nodes: state.nodes.map((n) => (n.id === id ? { ...n, ...patch } : n)) }),
+    { set({ nodes: state.nodes.map((n) => (n.id === id ? { ...n, ...patch } : n)) }); controls?.change(state) },
   reset: () => {
     state = initial(state)
+    controls?.reset(state)
     listeners.forEach((l) => l())
   },
 
@@ -112,15 +105,7 @@ export const mesh = {
     const event = { ...e, id: nextEventId++, t: performance.now() - state.startedAt }
     set({ events: [...state.events, event].slice(-MAX_EVENTS) })
   },
-  addTraffic: (bytes: number, airtimeMs: number) =>
-    set({
-      stats: {
-        ...state.stats,
-        bytesOnAir: state.stats.bytesOnAir + bytes,
-        airtimeMs: state.stats.airtimeMs + airtimeMs,
-      },
-    }),
-  addLostHop: () => set({ stats: { ...state.stats, lostHops: state.stats.lostHops + 1 } }),
+
 }
 
 // Subscribe to a slice of the state. Return primitives or stable references.

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react'
-import { MAP_H, MAP_W, MOCK_LINKS, formatSimTime, mesh, useMesh, type MeshEvent, type MeshNode } from '../mesh/network'
+import { MAP_H, MAP_W, formatSimTime, mesh, useMesh, type MeshEvent, type MeshNode } from '../mesh/network'
 import MeshControls from './MeshControls'
 import MeshTimeline from './MeshTimeline'
 
@@ -165,10 +165,13 @@ function Reveal({ show, children }: { show: boolean; children: React.ReactNode }
   )
 }
 
-// Floating glass card between the phones: a mock map of the 5-node mesh. At rest it
+// Floating glass card between the phones: the live map of the 5-node mesh. At rest it
 // is just green dots; hovering expands it to show links, live packets, a legend and
 // stats. The gear opens simulation controls and an event timeline.
 export default function MeshCard() {
+  const links = useMesh((s) => s.links)
+  const inFlight = useMesh((s) => s.inFlight)
+  const timeMs = useMesh((s) => s.timeMs)
   const nodes = useMesh((s) => s.nodes)
   const events = useMesh((s) => s.events)
   const stats = useMesh((s) => s.stats)
@@ -209,11 +212,11 @@ export default function MeshCard() {
   }
 
   const statItems: [string, string][] = [
-    ['Sim time', formatSimTime(now)],
+    ['Sim time', formatSimTime(timeMs)],
     ['On-air bytes', stats.bytesOnAir < 1000 ? `${stats.bytesOnAir} B` : `${(stats.bytesOnAir / 1000).toFixed(1)} KB`],
     ['Airtime', `${(stats.airtimeMs / 1000).toFixed(1)} s`],
     ['Lost hops', `${stats.lostHops}`],
-    ['In flight', `${flying.length}`],
+    ['In flight', `${inFlight}`],
   ]
 
   return (
@@ -260,7 +263,7 @@ export default function MeshCard() {
             strokeDasharray="2 2"
             vectorEffect="non-scaling-stroke"
           />
-          {MOCK_LINKS.map(([a, b]) => {
+          {links.map(([a, b]) => {
             const na = byId.get(a)
             const nb = byId.get(b)
             if (!na || !nb || !na.online || !nb.online) return null

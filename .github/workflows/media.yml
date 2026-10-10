@@ -1,6 +1,22 @@
 name: Media contract and recovery
 on: [push, pull_request]
 jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: chatterbot/package-lock.json
+      - run: npm ci
+        working-directory: chatterbot
+      - run: npm run lint
+        working-directory: chatterbot
+      - run: npm run build
+        working-directory: chatterbot
+      - run: git diff --exit-code -- imageoverbt/ui/index.html imageoverbt/ui/client
   media:
     runs-on: ubuntu-latest
     strategy:

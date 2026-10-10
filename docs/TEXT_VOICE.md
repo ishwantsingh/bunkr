@@ -8,22 +8,25 @@ shared **software mesh engine** from `mesh-simulation`; see [model limits](UI_MO
 Install the Python project as described in the README. Voice encoding additionally
 requires **FFmpeg with libopus** on the server's PATH. On macOS, `brew install
 ffmpeg`; on Ubuntu, `sudo apt-get install ffmpeg`. Text and images still work
-without it; the UI disables voice controls and explains the missing dependency.
+without it; attempting to send voice reports the server dependency error.
 
 Start `python -m imageoverbt.ui_server` and open http://127.0.0.1:8765.
-Either Alex or Sam can:
+Either Richard or Maya can:
 
 - Type a message and press Enter or the send arrow.
-- Click **Record**, allow microphone access, then **Stop & send**. Recording stops
-  automatically just before 60 seconds. Microphone denial has an explicit message.
-- **Import audio** from a local file, or click **Try voice** for the bundled speech
-  sample without microphone permission.
+- Click the microphone, allow microphone access, then the send checkmark.
+  The pill morphs around a live waveform; its cancel button discards the recording
+  and releases the microphone. Notes over 60 seconds are rejected.
 - Play a voice note after all chunks arrive, the hash matches and audio decoding
-  succeeds. Incomplete content is withheld.
+  succeeds. The recipient sees waveform progress before completion but cannot
+  play unverified audio. Microphone denial reports an explicit error.
+
+The phone uses only the reference composer controls; audio import and sample
+voice buttons are absent.
 
 The local server accepts at most 8 MiB of input audio and 60 seconds of decoded
 speech. Longer notes are rejected, not silently cut short. Browser recording
-format is selected with `MediaRecorder.isTypeSupported`; server transcoding
+uses its supported default `MediaRecorder` format; server transcoding
 normalizes recorded/imported audio to mono Ogg Opus, 16 kHz input, 12 kb/s target,
 VBR, speech mode. Container overhead and VBR mean total bytes are not exactly
 12 kb/s. FFmpeg runs with bounded duration/time and pipe-only protocol access.
@@ -36,7 +39,7 @@ The sample is clearly synthetic fixture speech, not a user recording. See
 
 Implementation: [messages.py](../imageoverbt/messages.py),
 [browser protocol](../imageoverbt/ui/protocol.mjs), and
-[messaging UI controller](../imageoverbt/ui/messages.mjs).
+[reference UI transport adapter](../chatterbot/src/mesh/runtime.mjs).
 
 This adds **manifest tag 7** to wire version 2. Image tags 1–6 are unchanged.
 Older image-only receivers must reject unknown tag 7; this extension requires
@@ -81,10 +84,10 @@ partial transfers and regenerates completion ACKs after restart.
 
 The browser shows queued/in-transit chunk progress, waiting for a route, locally
 verified reception and sender-confirmed receipt separately. During disconnection
-it gives no fabricated ETA. On failure, **Retry message** resends the same message
-ID; after verified reception, **Retry acknowledgment** retries only the ACK and
-keeps the received content visible. It never displays a second received bubble
-for those retries. One transfer runs at a time; this is not a production queue.
+it gives no fabricated ETA. The existing engine attempts bounded missing-chunk
+recovery. Exhaustion reports failure; verified recipient content remains visible
+even when a returning acknowledgment fails. No extra retry buttons are added to
+the reference phones. One transfer runs at a time; reset cancels queued work.
 
 The demo server database is temporary. Browser receive state is in memory;
 recovery survives a paused/disconnected route, but not page reload. Independent

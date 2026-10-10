@@ -4,7 +4,7 @@ const label = 'text-[11px] font-medium text-slate-500'
 const value = 'text-[11px] font-semibold text-[#2fae2a] tabular-nums'
 const slider = 'h-1 w-full cursor-pointer accent-[#3cc236]'
 
-// Mock simulation controls. They only change what the mesh card shows.
+// Reference controls drive the live shared mesh engine.
 export default function MeshControls({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) {
   const preset = useMesh((s) => s.preset)
   const lossPct = useMesh((s) => s.lossPct)

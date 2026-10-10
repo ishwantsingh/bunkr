@@ -46,12 +46,12 @@ connected over BLE/serial are a later option, outside the initial scope.
 | Area | Status | What we have / what remains |
 | --- | --- | --- |
 | Phase 1: media handling | **Built** | Original retention, EXIF orientation, JPEG/WebP encoding, preview/crop/full-image representations, binary packets, integrity checks, cache reuse and restart-safe Python reconstruction. |
-| Text and voice | **Built over integrated software mesh** | Bidirectional UTF-8/zlib text and mono Opus voice, record/import/sample controls, playback after verification, and matching receipt ACKs. Video remains unimplemented. |
-| Two-phone interaction | **Built as a local UI** | Send a preview, drag/resize a crop, request that section, progressively reveal six independently verified source tiles, and confirm receipt after the ACK returns. |
+| Text and voice | **Built over integrated software mesh** | Bidirectional UTF-8/zlib text and mono Opus voice, the reference recording composer, playback after verification, and matching receipt ACKs. Video remains unimplemented. |
+| Two-phone interaction | **Built as a local UI** | Send a preview, draw selections, request each area or render the whole image, progressively reveal six independently verified source tiles, and confirm receipt after the ACK returns. |
 | Network visualization | **Integrated** | Five range-aware nodes, seeded per-hop loss, bounded hop/application recovery, priority queue, radio presets, alternate routes, pause and disconnection. Byte and time metrics come from the engine. |
 | Meshtastic reuse | **Adapter built; integration pending** | Official SDK/protobufs and a send/receive bridge are tested offline. Connected endpoints, firmware nodes and transport dispatch are not wired together. |
 | Phase 2: transport and radio model | **Partial** | Range, presets, approximate airtime, packet-boundary priority and bounded recovery are built. Firmware integration, fairness, backpressure, expiry, contention, duty-cycle behavior and erasure correction remain unfinished. |
-| Phase 3: production application | **Partial** | The interaction is implemented in the local software demo. Photo import (JPG/PNG/WebP/HEIC) is built. Separate device sessions, durable browser receive state and the full-image request UI remain unfinished. The media engine already supports full-image representations. |
+| Phase 3: production application | **Partial** | The interaction is implemented in the local software demo. Photo import (JPG/PNG/WebP/HEIC) is built. Separate device sessions and durable browser receive state remain unfinished. Full-image requests use the same verified tile pipeline. |
 | Performance and acceptance evidence | **Partial** | Codec/packet measurements and automated local checks exist. Firmware-backed acceptance, physical airtime validation, request round-trip benchmarks and crop-versus-full-image benchmarks remain outstanding. |
 | Physical radios / native mobile apps | **Outside initial scope** | No physical LoRa/BLE field validation or native iOS/Android app has been built. |
 
@@ -60,7 +60,7 @@ connected over BLE/serial are a later option, outside the initial scope.
 1. The sender retains the original; the server encodes a tiny preview.
 2. Actual preview packets cross the shared software mesh. The browser reconstructs
    and verifies them before displaying the preview.
-3. The recipient selects a box and clicks **Request section**. The request crosses
+3. The recipient draws a box and taps its **render arrow**. The request crosses
    the reverse mesh route before the server creates detail.
 4. The server crops the original into six independently encoded tiles. Their
    actual packets cross the software mesh, and each verified tile appears in place.
@@ -75,12 +75,12 @@ progress currently lives in memory and does not survive a page reload.
 
 | Component | Implementation |
 | --- | --- |
-| Phone UI and interaction | [app.mjs](../imageoverbt/ui/app.mjs), [index.html](../imageoverbt/ui/index.html), [style.css](../imageoverbt/ui/style.css) |
+| Phone UI and interaction | [App.tsx](../chatterbot/src/App.tsx), [components](../chatterbot/src/components), [runtime.mjs](../chatterbot/src/mesh/runtime.mjs) |
 | Shared mesh and native contract adapter | [simulator.mjs](../imageoverbt/ui/mesh/simulator.mjs), [network.mjs](../imageoverbt/ui/network.mjs) |
 | Browser packet receiver | [protocol.mjs](../imageoverbt/ui/protocol.mjs) |
 | Local API | [ui_server.py](../imageoverbt/ui_server.py) |
 | Image processing and SQLite state | [media.py](../imageoverbt/media.py) |
-| Text/voice media and persistence | [messages.py](../imageoverbt/messages.py), [messages.mjs](../imageoverbt/ui/messages.mjs) |
+| Text/voice media and persistence | [messages.py](../imageoverbt/messages.py), [runtime.mjs](../chatterbot/src/mesh/runtime.mjs) |
 | Binary frame contract | [contract.py](../imageoverbt/contract.py) |
 | Official SDK adapter | [meshtastic_transport.py](../imageoverbt/meshtastic_transport.py) |
 | Local event vocabulary | [events.py](../imageoverbt/events.py) — full transport metrics integration remains pending |
@@ -92,4 +92,10 @@ See [implementation phases](../IMPLEMENTATION_PHASES.md),
 
 ### Integrated network workspace
 
-The middle panel adapts `mesh-ui` from `mesh-simulation` while preserving both phone screens. Its draggable nodes, range/availability editors and radio/loss controls operate on the same simulator that relays native image, text and voice packets. Packet inspection, hop traces, chunk progress and sender/receiver knowledge observe those transfers. Next-event stepping, seeded reset and approximate current-transfer estimates are implemented; estimates are not calibrated to firmware or physical radios.
+The middle panel uses the updated chatterbot floating glass mesh card and its
+hover reveal, live packet animations, range rings, animated settings switcher and
+event timeline. Node position/range/online, radio/loss and seeded reset operate on
+the existing simulator. Both phones use the reference components directly.
+The legacy mesh inspector/stepping modules remain separately tested, but their
+extra controls are not added to this reference interface. Estimates are approximate
+and are not calibrated to firmware or physical radios.

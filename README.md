@@ -15,15 +15,25 @@ Meshtastic interoperability uses the official [Python SDK](https://github.com/me
 ## Try the integrated messaging demo
 
 Run `python3 -m imageoverbt.ui_server` after installation and open
-[localhost:8765](http://127.0.0.1:8765). Two chatterbot-styled phone chats surround an animated
-five-node mesh against its dusk bokeh background. Expand a received photo to draw
-a selection, or choose **Render full image**; verified detail appears piece by piece. Use **Upload photo** on the sender to import JPG, PNG, WebP or
-iPhone HEIC photos, then **Send photo**. Drag the recipient’s crop box and click **Request section** to
-watch verified source detail arrive progressively. Type messages on either phone,
-record/import a voice note, or click **Try voice** for a speech sample. Voice
-requires FFmpeg with libopus on the server. Loss, relay removal,
-disconnection, pause, reset and another-section requests are interactive.
-See [UI_MOCK.md](docs/UI_MOCK.md) for setup, controls and simulation limits.
+[localhost:8765](http://127.0.0.1:8765). The application uses the React UI in
+`chatterbot/` directly: both phone chats, dusk bokeh background, floating glass
+mesh card, image expansion/collapse and recording transitions.
+
+Use the composer's photo icon on either phone to pick and send a JPG, PNG, WebP
+or HEIC photo. Open the received preview, drag to select an area, then tap its
+arrow to render it. Six independently verified pieces reveal source detail as
+it arrives; **Render full** uses the same pipeline for the whole image. Type a
+message or record a voice note using the microphone, cancel and send controls.
+Voice encoding requires FFmpeg with libopus.
+
+Hover over the mesh to reveal routes and measured counters. Its gear opens the
+reference simulation controls and event timeline. Preset, loss, node position,
+range, online state and seed/reset control the existing packet engine. No extra
+upload, sample voice, retry or request buttons are added to the phones.
+
+Prebuilt assets are included; running the server needs no Node.js or internet.
+To change the frontend, use Node.js 22.12+ (`npm ci` in `chatterbot/`, then
+`npm run build`). See [UI_MOCK.md](docs/UI_MOCK.md) for controls and model limits.
 
 ## The use case
 
@@ -117,5 +127,3 @@ The current prototype covers **text, voice notes, photos, previews, and requeste
 - [VISTA-LoRa: research on selective visual transmission over LoRa](https://ieeexplore.ieee.org/abstract/document/11513963)
 
 These projects establish related work. imageoverbt's proposed focus is the interaction between recipient-selected image detail, transmission priority, and explicit delivery evidence.
-
-The integrated middle panel now includes the `mesh-simulation` branch’s draggable map, per-node position/range/online controls, radio presets, loss, replay speed, single-event stepping, seed/reset, packet inspection, native chunk progress, timeline and approximate transfer estimates. See [demo controls](docs/UI_MOCK.md).

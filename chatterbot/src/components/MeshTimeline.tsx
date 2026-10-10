@@ -11,7 +11,7 @@ const dot: Record<MeshEventKind, string> = {
   failed: 'bg-red-400',
 }
 
-// Everything the mock mesh reported, oldest first, following the latest event.
+// Actual events from the shared packet engine, oldest first, following the latest event.
 export default function MeshTimeline() {
   const events = useMesh((s) => s.events)
   const end = useRef<HTMLDivElement>(null)
