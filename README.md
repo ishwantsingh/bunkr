@@ -4,7 +4,7 @@
 
 imageoverbt is an image-only, off-grid messaging concept for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
 
-**Status:** Concept and documentation only. The app, image pipeline, and mesh simulator are not implemented yet.
+**Status:** The image mesh simulator and middle network UI are implemented on the `mesh-simulation` branch. The sender and receiver phone screens and production image encoder are separate team work. The simulator currently uses local SVG image fixtures.
 
 ## The use case
 
@@ -38,7 +38,28 @@ Sender's photo -> Small preview -> Simulated radio mesh -> Recipient
       +-> Compressed crop -> Prioritized packets -> Verified detail
 ```
 
-The first implementation will be entirely software: an iPhone-style interface alongside a map with at least five virtual radio nodes. The intended hardware model is a phone connected to a CHRP radio accessory; the long-range link between accessories is LoRa.
+The first implementation is entirely software. The five-node map and simulator are built; the iPhone-style sender and receiver screens are separate team work. The intended hardware model is a phone connected to a CHRP radio accessory, with LoRa between accessories.
+
+### Run the mesh simulator
+
+From the repository root, run `python3 -m http.server 8765` and open
+`http://127.0.0.1:8765/mesh-ui/`. No package installation is needed. Run
+`node --test mesh-ui/simulator.test.mjs` for transport checks.
+
+Click **Start image demo**. The simulation pauses when D has verified the tiny
+preview; click **Request sign detail** to send the request back to A. Use
+**Pause**, **Play**, or **Next event** to inspect hops. Drag nodes, edit their
+range or availability, or disable relay C to test rerouting. Changing the radio
+preset affects future hops; the loss slider affects subsequent delivery checks.
+Reset to replay the same random seed.
+
+The simulator is in `mesh-ui/simulator.mjs`. Its `enqueueRepresentation` input
+accepts a manifest and byte chunks, so the media encoder can replace the SVG
+fixtures in `mesh-ui/fixtures.mjs`. Each demo packet has actual binary bytes and
+is checked against the 230-byte cap. The 16-byte outer header uses the field
+sizes described by Meshtastic; the 24-byte application envelope, shared-channel
+queue, route choice, and airtime overhead are simplified simulation choices.
+This is not a Meshtastic firmware-compatible packet implementation.
 
 ### Image transport
 
@@ -84,7 +105,7 @@ Show the sender, recipient, and five-node mesh together. Configure a three-hop p
 
 Compare recipient-directed delivery with sequential full-image delivery using the same source photos, codec settings, radio model, and reproducible loss scenarios. Report time to preview, time from selection to readable detail, total transmitted bytes and airtime including control traffic and retries, and completion rate for requested representations. Include request round-trip time in the comparison.
 
-Planned automated checks cover packet-size limits, exact reconstruction of encoded bytes, missing-chunk recovery, duplicate handling, request prioritization, interrupted transfers, and acknowledgment-driven status changes. No implementation tests exist yet.
+Mesh tests now cover packet size, byte verification, missing-chunk recovery, duplicate request handling, requested-crop priority, relay interruption, disconnection, and acknowledgment-driven sender status. Media encoding and phone-screen integration checks remain planned.
 
 ## Scope
 

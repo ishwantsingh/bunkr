@@ -2,8 +2,13 @@
 
 **Scope:** image transfer only. Person 2 owns the mesh simulation and the
 middle network UI. The sender and receiver phone screens belong to Person 1;
-image encoding and verification belong to Person 3. The current middle UI is a
-scripted mock, so its nodes and events are not yet calculated by a simulator.
+image encoding and verification belong to Person 3. The middle UI now uses the
+simulator and local image fixtures. The media owner's encoder can replace those
+fixtures through the representation input API.
+
+**Status:** all eight steps below are implemented and checked with automated
+scenarios. The production image encoder and phone screens remain separate team
+work.
 
 ## Build in small, visible steps
 

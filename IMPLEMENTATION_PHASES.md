@@ -194,5 +194,6 @@ Document how to reproduce the demo, interruption cases, and benchmark results.
 4. Integrate the app, run the complete acceptance scenarios and comparison, and
    document the measured results and remaining simulator limitations.
 
-These branches and components are planned work. Updating this document does not
-mean the app, pipeline, simulator, or implementation tests already exist.
+The mesh simulator, middle network UI, and mesh tests now exist on the
+`mesh-simulation` branch. Media encoding and the phone screens are separate
+team work that still needs integration.
