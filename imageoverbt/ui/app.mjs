@@ -1,4 +1,5 @@
 import {parseManifest, Reassembler, makeAck, makeRequest, clampBounds, fromHex, validate} from './protocol.mjs';
+import {mountPresentation} from './presentation.mjs';
 import {mountMessages} from './messages.mjs';
 import {mountPhotoImport} from './photos.mjs';
 import {Network} from './network.mjs';
@@ -8,8 +9,8 @@ const $ = id => document.getElementById(id);
 let network=new Network(), demo=null, transfer=null, busy=false, previewReady=false, generation=0;
 let bounds=[.18,.25,.84,.59], speed=1, tickBusy=false, autoStart=null;
 const objectURLs=new Set();
-let messages,photos,panel;
-function setBusy(value){busy=value;if(messages)messages.controls();else photos?.controls();panel?.render();}
+let messages,photos,panel,presentation;
+function setBusy(value){busy=value;if(messages)messages.controls();else photos?.controls();panel?.render();presentation?.controls();}
 const icon=(id)=>`<svg><use href="#i-${id}"/></svg>`;
 function event(text,type='normal',elapsed=network.time){panel?.log(text,type,elapsed);}
 function toast(message) {$('toast').textContent=message;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,5000);}
@@ -57,7 +58,7 @@ async function decodeVerified(reassembler){
 async function sendPhoto(){
   if(busy||!demo)return;const version=generation;setBusy(true);
   $('send-photo').disabled=true;$('request-section').disabled=true;$('another-section').hidden=true;
-  $('detail-tiles').replaceChildren();$('crop-box').hidden=true;$('preview-image').hidden=true;$('image-placeholder').hidden=false;$('selection-help').hidden=false;
+  presentation?.clearProgress();$('detail-tiles').replaceChildren();$('crop-box').hidden=true;$('preview-image').hidden=true;$('image-placeholder').hidden=false;$('selection-help').hidden=false;
   previewReady=false;step(1);senderStatus('Sending tiny preview','The full photo stays on Alex’s phone.',true);recipientStatus('A preview is on its way','Packets are hopping across the mesh.');
   $('network-subtitle').textContent='Preview first. The original stays with Alex.';event('Preview queued at A · original retained locally');
   try{
@@ -82,19 +83,28 @@ async function requestSection(){
   if(busy||!previewReady)return;const version=generation;setBusy(true);
   $('request-section').disabled=true;$('send-photo').disabled=true;$('another-section').hidden=true;$('selection-help').hidden=true;
   $('crop-box').classList.add('locked');$('crop-box-label').textContent='REQUESTING DETAIL';step(3);
+  presentation?.progress(0,1);
   const selected=[...bounds],requestId=crypto.randomUUID().replaceAll('-','');
+  const fullImage=selected.every((value,index)=>value===[0,0,1,1][index]);
   const requestWire=makeRequest(demo.image_id,requestId,selected);
   recipientStatus('Requesting your section','The request is traveling back to Alex.');senderStatus('Waiting for Sam’s request','Only the preview has been confirmed.');
   $('network-subtitle').textContent='A small request travels back. Selected detail gets priority.';
   event('Section request queued at D · reverse path');
   try{
-    await runFrames([{wire:requestWire}],{label:'Request → sender',reverse:true});guard(version);
+    await runFrames([{wire:requestWire}],{label:'Request → sender',reverse:true,onState:state=>presentation?.progress(0,1,state)});guard(version);
     event('Request reached A · selected detail takes priority');$('local-reply').hidden=false;
     senderStatus('Sending requested section','Extracting pixels from the original photo.',true);
     const response=await api('/api/crop',{image_id:demo.image_id,bounds:selected,request_id:requestId});guard(version);
     const reps=response.tiles.map(rep=>({wire:rep,manifest:parseManifest(rep.manifest),assembler:new Reassembler(parseManifest(rep.manifest)),registered:false,revealed:false}));
+    for(const rep of reps){
+      const [l,t,r,b]=rep.manifest.bounds,loading=document.createElement('div');
+      loading.className='detail-loading';loading.setAttribute('aria-hidden','true');
+      Object.assign(loading.style,{left:`${l*100}%`,top:`${t*100}%`,width:`${(r-l)*100}%`,height:`${(b-t)*100}%`});
+      $('detail-tiles').append(loading);rep.loading=loading;
+    }
     let revealed=0;
-    recipientStatus('Selected detail is arriving','0 of 6 pieces verified. The rest stays blurry.');$('crop-box-label').textContent='DETAIL ARRIVING';
+    const totalFrames=reps.reduce((sum,rep)=>sum+rep.manifest.count+1,0);let receivedFrames=0;
+    recipientStatus('Selected detail is arriving',`0 of ${reps.length} pieces verified. The rest stays blurry.`);$('crop-box-label').textContent='DETAIL ARRIVING';
     async function reveal(rep){
       if(rep.revealed||!rep.registered||rep.assembler.chunks.size!==rep.manifest.count)return;
       rep.revealed=true;const url=await decodeVerified(rep.assembler);guard(version);
@@ -102,14 +112,14 @@ async function requestSection(){
       const x0=Math.floor(left*m.sourceWidth),y0=Math.floor(top*m.sourceHeight),x1=Math.ceil(right*m.sourceWidth),y1=Math.ceil(bottom*m.sourceHeight);
       const tile=document.createElement('img');tile.alt='Verified source detail';tile.src=url;
       Object.assign(tile.style,{left:`${x0/m.sourceWidth*100}%`,top:`${y0/m.sourceHeight*100}%`,width:`${(x1-x0)/m.sourceWidth*100}%`,height:`${(y1-y0)/m.sourceHeight*100}%`});
-      $('detail-tiles').append(tile);revealed++;
-      recipientStatus('Selected detail is arriving',`${revealed} of 6 pieces verified. The rest stays blurry.`);
-      $('receiver-image-status').textContent=`PREVIEW + ${revealed}/6 VERIFIED DETAIL`;
-      event(`Detail piece ${revealed}/6 verified at D · pixels revealed`,'verified');
+      rep.loading.remove();$('detail-tiles').append(tile);revealed++;
+      recipientStatus('Selected detail is arriving',`${revealed} of ${reps.length} pieces verified. The rest stays blurry.`);
+      $('receiver-image-status').textContent=`PREVIEW + ${revealed}/${reps.length} VERIFIED DETAIL`;
+      event(`Detail piece ${revealed}/${reps.length} verified at D · pixels revealed`,'verified');
     }
-    await runFrames(reps.flatMap((rep,i)=>framesFor(rep.wire,i)),{label:'Requested detail',onFrame:async f=>{const rep=reps[f.index];if(f.manifest){validate(fromHex(f.wire),1);rep.registered=true;}else rep.assembler.add(f.wire);await reveal(rep);}});
-    guard(version);if(revealed!==6)throw Error('Section verification did not finish');
-    $('crop-box-label').textContent='HIGH-DEFINITION SECTION';
+    await runFrames(reps.flatMap((rep,i)=>framesFor(rep.wire,i)),{label:'Requested detail',onState:state=>presentation?.progress(receivedFrames,totalFrames,state),onFrame:async f=>{presentation?.progress(++receivedFrames,totalFrames);const rep=reps[f.index];if(f.manifest){validate(fromHex(f.wire),1);rep.registered=true;}else rep.assembler.add(f.wire);await reveal(rep);}});
+    guard(version);if(revealed!==reps.length)throw Error('Section verification did not finish');
+    presentation?.clearProgress();$('crop-box-label').textContent='HIGH-DEFINITION SECTION';
     recipientStatus('Your section is clear','Verified locally. Confirming with Alex…');senderStatus('Section sent · awaiting receipt','Waiting for Sam’s verified completion acknowledgment.',true);
     const acks=reps.map(rep=>makeAck(rep.manifest));
     await runFrames(acks.map(wire=>({wire})),{label:'Confirming receipt',reverse:true});guard(version);
@@ -118,10 +128,10 @@ async function requestSection(){
     senderStatus('Section receipt confirmed','Only the detail Sam requested was sent.',false,true);
     const packetTotal=reps.reduce((sum,rep)=>sum+rep.manifest.count+1,0);
     $('progress-label').textContent='Selected detail delivered';$('packet-count').innerHTML=`${packetTotal} <small>/ ${packetTotal} packets</small>`;
-    recipientStatus('Section received & verified','Original pixels. Just where you need them.');
-    $('receiver-image-status').textContent='PREVIEW + VERIFIED HD SECTION';$('another-section').hidden=false;step(3,true);
-    $('network-subtitle').textContent='Requested detail is clear. The rest can stay a preview.';event('Completion ACK reached A · sender receipt confirmed','verified');
-  }catch(error){if(error.name!=='AbortError'){toast(error.message);recipientStatus('Detail transfer stopped',error.message);$('crop-box').classList.remove('locked');$('request-section').disabled=false;}}
+    recipientStatus(fullImage?'Image received & verified':'Section received & verified',fullImage?'All six image pieces are clear.':'Original pixels. Just where you need them.');
+    $('receiver-image-status').textContent=fullImage?'VERIFIED FULL IMAGE':'PREVIEW + VERIFIED HD SECTION';$('another-section').hidden=false;step(3,true);
+    $('network-subtitle').textContent=fullImage?'Full image verified. Receipt confirmed by the sender.':'Requested detail is clear. The rest can stay a preview.';event('Completion ACK reached A · sender receipt confirmed','verified');
+  }catch(error){if(error.name!=='AbortError'){presentation?.clearProgress();for(const el of document.querySelectorAll('.detail-loading'))el.remove();toast(error.message);recipientStatus('Detail transfer stopped',error.message);$('crop-box').classList.remove('locked');$('request-section').disabled=false;}}
   finally{if(version===generation){setBusy(false);$('send-photo').disabled=false;}}
 }
 function photoGeometry(){
@@ -150,7 +160,7 @@ function applyPhoto(response,name){
   event('New photo prepared at A · not sent yet');
 }
 function reset(){
-  generation++;photos?.reset();messages?.reset();drag=null;clearTimeout(autoStart);if(transfer){transfer.reject(cancelError());transfer=null;}
+  generation++;presentation?.reset();photos?.reset();messages?.reset();drag=null;clearTimeout(autoStart);if(transfer){transfer.reject(cancelError());transfer=null;}
   network=new Network({loss:Number($('lossRange').value)/100,preset:$('presetSelect').value,seed:Number($('seedInput').value)||16});previewReady=false;setBusy(false);
   for(const url of objectURLs)URL.revokeObjectURL(url);objectURLs.clear();
   $('detail-tiles').replaceChildren();
@@ -179,13 +189,14 @@ $('crop-box').addEventListener('keydown',e=>{
 });
 $('another-section').addEventListener('click',()=>{bounds=[.12,.08,.65,.44];selection();$('crop-box').classList.remove('locked');$('crop-box-label').textContent='SELECTED SECTION';$('another-section').hidden=true;$('request-section').disabled=false;recipientStatus('Choose another section','Drag the box. Previously received detail stays.');step(2);});
 $('send-photo').addEventListener('click',()=>{clearTimeout(autoStart);sendPhoto();});$('request-section').addEventListener('click',requestSection);$('reset').addEventListener('click',reset);
-messages=mountMessages({onVerified:m=>network.markVerified(m.id),onConfirmed:m=>network.markConfirmed(m.id),api,runFrames,event,urls:objectURLs,isBusy:()=>busy,setBusy,generation:()=>generation,guard,cancelAutoStart:()=>clearTimeout(autoStart),composeBusy:disabled=>{photos?.controls(disabled);$('send-photo').disabled=disabled||!demo;$('request-section').disabled=disabled||!previewReady||$('crop-box').classList.contains('locked');}});
+messages=mountMessages({onRecording:(...args)=>presentation?.recordingChanged(...args),onControls:()=>presentation?.controls(),onVerified:m=>network.markVerified(m.id),onConfirmed:m=>network.markConfirmed(m.id),api,runFrames,event,urls:objectURLs,isBusy:()=>busy,setBusy,generation:()=>generation,guard,cancelAutoStart:()=>clearTimeout(autoStart),composeBusy:disabled=>{photos?.controls(disabled);$('send-photo').disabled=disabled||!demo;$('request-section').disabled=disabled||!previewReady||$('crop-box').classList.contains('locked');}});
 photos=mountPhotoImport({button:$('choose-photo'),input:$('photo-file'),status:$('photo-import-status'),
   isBusy:()=>busy,setBusy,ready:()=>!!demo,generation:()=>generation,guard,
   cancelAutoStart:()=>clearTimeout(autoStart),applyPhoto});
 panel=mountMeshPanel({network:()=>network,busy:()=>busy,canSend:()=>!!demo&&!busy,
   canRequest:()=>previewReady&&!busy&&!$('crop-box').classList.contains('locked'),
   sendPhoto:()=>{clearTimeout(autoStart);sendPhoto();},requestSection,step:()=>tick({singleEvent:true}),setSpeed:value=>speed=value,reset});
+presentation=mountPresentation({refreshControls:()=>messages.controls(),network:()=>network,busy:()=>busy,previewReady:()=>previewReady,request:requestSection,cancelRecording:()=>messages.cancelRecording(),select:next=>{if(busy||!previewReady)return;bounds=next;selection();$('crop-box').classList.remove('locked');$('crop-box-label').textContent='SELECTED SECTION';$('another-section').hidden=true;$('request-section').disabled=false;}});
 reset();
 try{demo=await api('/api/demo');messages.ready(demo.voice_available);$('source-image').src=demo.source_url;photoGeometry();photos.controls();$('protocol-label').textContent=demo.transport;$('send-photo').disabled=false;panel.render();autoStart=setTimeout(sendPhoto,700);}
 catch(error){toast('Could not load the media demo: '+error.message);$('protocol-label').textContent='Media server unavailable';}

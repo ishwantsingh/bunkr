@@ -23,6 +23,35 @@ source crops sharpen the selected region as each passes CRC, SHA-256, decoding
 and dimensions checks. Previously verified sections remain visible. Arrow keys
 move the box; Shift+arrows resize it.
 
+### Chatterbot interface
+
+The phones use chatterbot’s blue gradient, grain, serif fonts and slim dark frame.
+Its dusk skyline and bokeh lights sit behind matching glass network panels.
+Fonts and their SIL Open Font Licenses are bundled locally; the UI needs no font
+service, React build or external network access.
+
+- Click **Expand received photo** (or focus the image and press Enter) to open the
+  phone’s image viewer. Draw a new selection outside the current box, or move and
+  resize the box. **Close photo viewer** or Escape returns to the chat.
+- **Request section** shows actual received-frame progress inside the selection.
+  Each of the six pieces shimmers until its bytes are independently verified, then
+  reveals its source pixels immediately. Paused/disconnected transfers keep their
+  verified pieces and show an honest waiting state. **Render full image** requests
+  bounds covering the entire image through the same six-piece backend pipeline.
+- The composer shows a microphone while empty and a send arrow with text. While
+  recording, it becomes a live audio waveform with cancel and send buttons.
+  Cancel discards the recording and releases the microphone. Import and sample
+  voice controls remain available when server voice support is installed.
+- The sender’s composer photo icon opens the existing local photo picker. Photos
+  still travel A → D, and detail requests/receipts return D → A. Text and voice
+  remain bidirectional. No mock delivery or recipient access to original pixels
+  from chatterbot is used.
+- Tap a phone’s radio orb to inspect its current preset, route and modeled loss.
+- Desktop keeps the phones left and right of the mesh. Tablets put the phones
+  above the mesh; narrow screens stack both phones and the mesh without shrinking
+  the chat controls into tiny targets. Reduced-motion preferences stop shimmer
+  and entrance animation.
+
 ### Import a photo
 
 Click **Upload photo** on the sender, select a JPG, PNG, WebP or HEIC/HEIF file,
