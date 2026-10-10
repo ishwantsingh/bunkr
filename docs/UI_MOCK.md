@@ -23,18 +23,48 @@ source crops sharpen the selected region as each passes CRC, SHA-256, decoding
 and dimensions checks. Previously verified sections remain visible. Arrow keys
 move the box; Shift+arrows resize it.
 
+### Import a photo
+
+Click **Upload photo** on the sender, select a JPG, PNG, WebP or HEIC/HEIF file,
+then click **Send photo**. Import prepares the source and preview locally; it does
+not deliver anything to the recipient. The preview, section requests, detail tiles
+and completion ACKs still cross the same mesh. Photo selection preserves existing
+text/voice chat and clears the previous image's received detail and receipts.
+
+The local upload endpoint accepts at most **12 MiB / 50 megapixels**. It checks the
+actual image content, rejects corrupt or animated files, applies EXIF orientation
+and retains an orientation-corrected lossless source. Portrait and landscape photos
+keep their aspect ratio. The local sender display uses a JPEG thumbnail; crops
+always come from the retained source, not that thumbnail or the transmitted preview.
+
+Invalid imports leave the current photo intact. Reset cancels an in-flight import;
+late upload results cannot replace the current photo. Every crop request identifies
+its source explicitly. Reset keeps a successfully imported photo selected; a page
+reload returns to the configured sample. Imported files live only in the demo's
+temporary local database, which is removed when the server stops.
+
+`POST /api/photo` accepts raw image bytes and returns the normal media demo envelope
+plus an immutable `image_id` and `source_url`. `POST /api/crop` accepts `image_id`
+with its bounds and request ID. `GET /api/source.jpg?image_id=…` serves that source's
+browser thumbnail. Filename text stays in the browser and is never used as a path.
+HEIC decoding uses the [Pillow HEIF plugin](https://pillow-heif.readthedocs.io/en/stable/pillow-plugin.html),
+installed with the application's dependencies. Reinstall with `pip install -e .`
+when updating an existing environment.
+
 Both phones can send text and compressed Opus voice. The recipient displays or
 plays only verified content. The sender confirms receipt only after the matching
 application ACK crosses the mesh back to the sender and is validated by the API.
 
 The map observes the shared `mesh-simulation` engine's actual packet events:
 
-- Default route: A → B → C → D. **Take C offline** reroutes through B → E → D.
-- Click relay nodes to toggle them. Removing B isolates A; restoring it resumes.
-- Choose a relay and change its range: links require mutual range and both nodes online.
+- Default route: A → B → C → D. **Disable relay C** reroutes through B → E → D.
+- Drag any node on the map; arrow keys move a focused node by 10 map units. Select a node to edit coordinates, mutual range and online state. Removing B isolates A; restoring it resumes.
+- The middle panel adapts the full `mesh-ui` workspace from `mesh-simulation`: movable nodes and range rings, actual packet inspector and hop trace, received/missing chunk grid, separate sender/receiver knowledge, timeline and controls. Both phone screens retain their messaging and photo-import flows.
 - Radio presets change modeled transmission time. Loss applies independently per hop (0–100%).
 - Disconnect/pause preserves received chunks and freezes progress. No arrival promise is made without a route.
-- Replay speed cycles 40× / 80× / 160×. It changes playback of simulated time, not the radio rate or measured byte counts.
+- Replay speed offers 40× / 80× / 160×. It changes playback of simulated time, not the radio rate or measured byte counts.
+- **Next event** pauses autoplay and advances exactly one engine event. Change the scenario seed and **Reset simulation** to replay a reproducible run. Reset also clears phone transfers and retains the selected photo.
+- Remaining time is an approximate range for the current transfer using queued bytes, remaining hops, radio rate and expected loss retries; it excludes future requests and local codec work. Pause, disconnection or an unavailable route is explicit.
 - Timeline times are simulated elapsed time. Counters include every hop, retry and control packet.
 
 ## Engine and packet integration
@@ -87,5 +117,6 @@ node --test tests/ui/*.test.mjs mesh-ui/simulator.test.mjs
 
 Checks cover native image/text/voice reconstruction over 20% per-hop loss,
 reverse requests/receipts, missing-chunk recovery, bounded failure, interrupted
-routes, range changes, preset timing and byte accounting, plus the original
+routes, range changes, preset timing and byte accounting, paused single-event stepping,
+inspector verification/receipt gates and rate/loss-aware estimates, plus the original
 standalone engine scenarios. CI runs both suites.

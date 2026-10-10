@@ -81,7 +81,7 @@ export function mountMessages(hooks){
         const bytes=await assembler.verifiedBytes();hooks.guard(version);
         if(m.kind===0){const content=await decodeMessageText(bytes,m.codec);hooks.guard(version);job.incoming.body.textContent=content;}
         else{await verifiedVoice(bytes,m);hooks.guard(version);audio(job.incoming.body,urlFor(bytes),`Voice note · ${(m.duration/1000).toFixed(1)}s`);}
-        job.received=true;job.incoming.el.classList.remove('receiving');
+        hooks.onVerified?.(m);job.received=true;job.incoming.el.classList.remove('receiving');
         job.incoming.receipt.textContent=`Received & verified · ${m.bytes.toLocaleString()} B`;
         job.incoming.receipt.classList.add('verified');scrollChat(owner(m.recipient));hooks.event(`${label} fully verified at ${reverse?'A':'D'}`,'verified');
       }
@@ -95,6 +95,7 @@ export function mountMessages(hooks){
       hooks.guard(version);
       const result=await hooks.api('/api/message/confirm',{ack});hooks.guard(version);
       if(!result.confirmed)throw Error('Sender could not confirm receipt');
+      hooks.onConfirmed?.(m);
       receipt(job,`Receipt confirmed ✓✓ · ${m.bytes.toLocaleString()} B`,true);
       $('progress-label').textContent=`${label} receipt confirmed`;
       status(owner(job.sender),m.kind===0?(m.codec===1?'Text compressed without losing characters.':'Sent as compact UTF-8.'):`Mono Opus · 12 kb/s target · ${(m.duration/1000).toFixed(1)}s`);

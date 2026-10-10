@@ -16,7 +16,8 @@ Meshtastic interoperability uses the official [Python SDK](https://github.com/me
 
 Run `python3 -m imageoverbt.ui_server` after installation and open
 [localhost:8765](http://127.0.0.1:8765). Two phone chats surround an animated
-five-node mesh. Drag the recipient’s crop box and click **Request section** to
+five-node mesh. Use **Upload photo** on the sender to import JPG, PNG, WebP or
+iPhone HEIC photos, then **Send photo**. Drag the recipient’s crop box and click **Request section** to
 watch verified source detail arrive progressively. Type messages on either phone,
 record/import a voice note, or click **Try voice** for a speech sample. Voice
 requires FFmpeg with libopus on the server. Loss, relay removal,
@@ -115,3 +116,5 @@ The current prototype covers **text, voice notes, photos, previews, and requeste
 - [VISTA-LoRa: research on selective visual transmission over LoRa](https://ieeexplore.ieee.org/abstract/document/11513963)
 
 These projects establish related work. imageoverbt's proposed focus is the interaction between recipient-selected image detail, transmission priority, and explicit delivery evidence.
+
+The integrated middle panel now includes the `mesh-simulation` branch’s draggable map, per-node position/range/online controls, radio presets, loss, replay speed, single-event stepping, seed/reset, packet inspection, native chunk progress, timeline and approximate transfer estimates. See [demo controls](docs/UI_MOCK.md).

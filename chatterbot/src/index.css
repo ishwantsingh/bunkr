@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+@import 'konsta/react/theme.css';
+
+@theme {
+  --font-display: 'Instrument Serif', 'Times New Roman', serif;
+  --font-serif: 'Crimson Pro', Georgia, serif;
+}
+
+@keyframes hopfill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

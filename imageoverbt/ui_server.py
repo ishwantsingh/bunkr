@@ -1,7 +1,6 @@
-"""Local messaging mock backed by real text, voice and image codecs."""
+"""Local messaging demo backed by real text, voice and image codecs."""
 import argparse
 import base64
-from dataclasses import asdict
 from functools import partial
 from hashlib import sha256
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -9,13 +8,22 @@ from io import BytesIO
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from urllib.parse import parse_qs, urlsplit
 
-from .contract import Ack, Bounds, Manifest, Request
+from PIL import Image
+from pillow_heif import register_heif_opener
+
+from .contract import Ack, Bounds, Request
 from .media import Store
 from .messages import MessageStore, MAX_UPLOAD, voice_available
 
+register_heif_opener(thumbnails=False)
+
 UI_DIR = Path(__file__).with_name('ui')
 SOURCE = Path(__file__).resolve().parents[1] / 'fixtures/trail-sign.jpg'
+MAX_PHOTO_UPLOAD = 12 * 1024 * 1024
+MAX_PHOTO_PIXELS = 50_000_000
+PHOTO_FORMATS = {'JPEG', 'PNG', 'WEBP', 'HEIF'}
 
 
 class DemoModel:
@@ -23,11 +31,6 @@ class DemoModel:
         self.database = database
         with self.store() as store:
             self.image_id = store.retain(source)
-            image = store.source(self.image_id)
-            image.thumbnail((1600, 1600))
-            output = BytesIO()
-            image.save(output, format='JPEG', quality=90)
-            self.source_jpeg = output.getvalue()
         try:
             from .meshtastic_transport import data_message, radio_size
             self.wrap, self.radio_size = data_message, radio_size
@@ -61,13 +64,46 @@ class DemoModel:
                     packets=[self.envelope(p) for p in packets],
                     radio_bytes=[self.radio_size(p) for p in packets])
 
-    def initial(self):
+    def source_image(self, image_id=None):
         with self.store() as store:
-            preview = store.produce(self.image_id, 1, 2, budget=300)
-            return dict(image_id=self.image_id, transport=self.transport,
+            image = store.source(image_id or self.image_id)
+            image.thumbnail((1600, 1600))
+            output = BytesIO()
+            image.save(output, format='JPEG', quality=90)
+            return output.getvalue()
+
+    def initial(self, image_id=None):
+        image_id = image_id or self.image_id
+        with self.store() as store:
+            preview = store.produce(image_id, 1, 2, budget=300)
+            return dict(image_id=image_id, transport=self.transport,
+                        source_url=f'/api/source.jpg?image_id={image_id}',
                         preview=self.representation(preview),
-                        default_bounds=[.18, .25, .84, .59],
+                        default_bounds=([.18, .25, .84, .59] if image_id == self.image_id
+                                        else [.2, .2, .8, .8]),
                         voice_available=voice_available())
+
+    def import_photo(self, data):
+        if not 0 < len(data) <= MAX_PHOTO_UPLOAD:
+            raise ValueError('Choose a photo up to 12 MiB.')
+        try:
+            with Image.open(BytesIO(data)) as image:
+                if image.format not in PHOTO_FORMATS:
+                    raise ValueError('Choose a JPG, PNG, WebP or HEIC photo.')
+                if image.width * image.height > MAX_PHOTO_PIXELS:
+                    raise ValueError('Choose a photo up to 50 megapixels.')
+                if max(image.size) > 65535:
+                    raise ValueError('Photo dimensions exceed the supported limit.')
+                if getattr(image, 'is_animated', False):
+                    raise ValueError('Choose a still photo, not an animation.')
+                image.load()  # Fully decode before retaining or changing the UI.
+            with self.store() as store:
+                image_id = store.retain(BytesIO(data))
+            # Sources are immutable and requests name their image explicitly.
+            # A cancelled upload cannot silently replace another photo's crops.
+            return self.initial(image_id)
+        except (OSError, Image.DecompressionBombError) as exc:
+            raise ValueError('This photo could not be read. Choose a JPG, PNG, WebP or HEIC photo.') from exc
 
     def message(self, payload):
         sender = payload.get('sender', 1)
@@ -109,7 +145,8 @@ class DemoModel:
 
     def crop(self, payload):
         bounds = Bounds.normalized(*payload['bounds'])
-        request = Request(payload['request_id'], self.image_id, 2, bounds, 1024)
+        image_id = payload.get('image_id', self.image_id)
+        request = Request(payload['request_id'], image_id, 2, bounds, 1024)
         # A UI request arrives here only after its simulated reverse-path delivery.
         request = Request.decode(bytes.fromhex(self.envelope(request.encode())))
         tiles = []
@@ -120,8 +157,8 @@ class DemoModel:
                     y = [bounds.top + (bounds.bottom - bounds.top) * n // 2 for n in range(3)]
                     tile_bounds = Bounds(x[col], y[row], x[col + 1], y[row + 1])
                     tile_id = sha256(f'{request.request_id}:{row}:{col}'.encode()).hexdigest()[:32]
-                    tile_request = Request(tile_id, self.image_id, 2, tile_bounds, 512)
-                    rep = store.produce(self.image_id, 1, 2, request=tile_request, budget=8000)
+                    tile_request = Request(tile_id, image_id, 2, tile_bounds, 512)
+                    rep = store.produce(image_id, 1, 2, request=tile_request, budget=8000)
                     tiles.append(self.representation(rep))
         return dict(request=self.envelope(request.encode()), tiles=tiles)
 
@@ -156,27 +193,38 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
-        if self.path == '/api/demo':
-            self.respond(self.model.initial())
-        elif self.path == '/api/source.jpg':
-            data = self.model.source_jpeg
-            self.send_response(200)
-            self.send_header('Content-Type', 'image/jpeg')
-            self.send_header('Content-Length', str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
-        elif self.path.startswith('/api/'):
-            self.respond({'error': 'Not found'}, 404)
-        else:
-            super().do_GET()
+        target = urlsplit(self.path)
+        try:
+            if target.path == '/api/demo':
+                self.respond(self.model.initial())
+            elif target.path == '/api/source.jpg':
+                image_id = parse_qs(target.query).get('image_id', [None])[0]
+                data = self.model.source_image(image_id)
+                self.send_response(200)
+                self.send_header('Content-Type', 'image/jpeg')
+                self.send_header('Content-Length', str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            elif target.path.startswith('/api/'):
+                self.respond({'error': 'Not found'}, 404)
+            else:
+                super().do_GET()
+        except (ValueError, KeyError, TypeError) as exc:
+            self.respond({'error': str(exc)}, 400)
 
     def do_POST(self):
         try:
             size = int(self.headers.get('Content-Length', '0'))
-            limit = 12*1024*1024 if self.path == '/api/message' else 65536
+            limit = MAX_PHOTO_UPLOAD if self.path in ('/api/message', '/api/photo') else 65536
             if not 0 < size <= limit:
                 raise ValueError('Invalid request size')
-            payload = json.loads(self.rfile.read(size))
+            body = self.rfile.read(size)
+            if len(body) != size:
+                raise ValueError('Incomplete upload')
+            if self.path == '/api/photo':
+                self.respond(self.model.import_photo(body))
+                return
+            payload = json.loads(body)
             if self.path == '/api/crop':
                 self.respond(self.model.crop(payload))
             elif self.path == '/api/confirm':

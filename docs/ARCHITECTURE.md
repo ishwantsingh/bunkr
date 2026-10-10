@@ -51,7 +51,7 @@ connected over BLE/serial are a later option, outside the initial scope.
 | Network visualization | **Integrated** | Five range-aware nodes, seeded per-hop loss, bounded hop/application recovery, priority queue, radio presets, alternate routes, pause and disconnection. Byte and time metrics come from the engine. |
 | Meshtastic reuse | **Adapter built; integration pending** | Official SDK/protobufs and a send/receive bridge are tested offline. Connected endpoints, firmware nodes and transport dispatch are not wired together. |
 | Phase 2: transport and radio model | **Partial** | Range, presets, approximate airtime, packet-boundary priority and bounded recovery are built. Firmware integration, fairness, backpressure, expiry, contention, duty-cycle behavior and erasure correction remain unfinished. |
-| Phase 3: production application | **Partial** | The interaction is implemented in the local software demo. Separate device sessions, durable browser receive state, photo-import UI and the full-image request UI remain unfinished. The media engine already supports full-image representations. |
+| Phase 3: production application | **Partial** | The interaction is implemented in the local software demo. Photo import (JPG/PNG/WebP/HEIC) is built. Separate device sessions, durable browser receive state and the full-image request UI remain unfinished. The media engine already supports full-image representations. |
 | Performance and acceptance evidence | **Partial** | Codec/packet measurements and automated local checks exist. Firmware-backed acceptance, physical airtime validation, request round-trip benchmarks and crop-versus-full-image benchmarks remain outstanding. |
 | Physical radios / native mobile apps | **Outside initial scope** | No physical LoRa/BLE field validation or native iOS/Android app has been built. |
 
@@ -89,3 +89,7 @@ progress currently lives in memory and does not survive a page reload.
 See [implementation phases](../IMPLEMENTATION_PHASES.md),
 [UI behavior and limits](UI_MOCK.md), and
 [Meshtastic integration boundary](MESHTASTIC.md) for the detailed contracts.
+
+### Integrated network workspace
+
+The middle panel adapts `mesh-ui` from `mesh-simulation` while preserving both phone screens. Its draggable nodes, range/availability editors and radio/loss controls operate on the same simulator that relays native image, text and voice packets. Packet inspection, hop traces, chunk progress and sender/receiver knowledge observe those transfers. Next-event stepping, seeded reset and approximate current-transfer estimates are implemented; estimates are not calibrated to firmware or physical radios.
