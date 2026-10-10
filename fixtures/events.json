@@ -1,0 +1,49 @@
+{
+  "description": "Illustrative evidence sequence, not measured timing. Completion ACK lost at t=500; recipient remains verified; sender confirms only after regenerated ACK arrives at t=900.",
+  "events": [
+    {
+      "type": "request_queued",
+      "time_ms": 0,
+      "observer": "endpoint",
+      "node_id": 2,
+      "image_id": "d79daf4b6bc2e660ddf269c0734f6adb",
+      "representation_id": "b2fb6a0926e97223fc21efe97a15508b",
+      "request_id": "10101010101010101010101010101010",
+      "airtime_ms": null,
+      "wire_bytes": 0
+    },
+    {
+      "type": "request_received",
+      "time_ms": 100,
+      "observer": "endpoint",
+      "node_id": 1,
+      "image_id": "d79daf4b6bc2e660ddf269c0734f6adb",
+      "representation_id": "b2fb6a0926e97223fc21efe97a15508b",
+      "request_id": "10101010101010101010101010101010",
+      "airtime_ms": null,
+      "wire_bytes": 0
+    },
+    {
+      "type": "verified_locally",
+      "time_ms": 500,
+      "observer": "endpoint",
+      "node_id": 2,
+      "image_id": "d79daf4b6bc2e660ddf269c0734f6adb",
+      "representation_id": "b2fb6a0926e97223fc21efe97a15508b",
+      "request_id": "10101010101010101010101010101010",
+      "airtime_ms": null,
+      "wire_bytes": 0
+    },
+    {
+      "type": "sender_confirmed",
+      "time_ms": 900,
+      "observer": "endpoint",
+      "node_id": 1,
+      "image_id": "d79daf4b6bc2e660ddf269c0734f6adb",
+      "representation_id": "b2fb6a0926e97223fc21efe97a15508b",
+      "request_id": "10101010101010101010101010101010",
+      "airtime_ms": null,
+      "wire_bytes": 0
+    }
+  ]
+}

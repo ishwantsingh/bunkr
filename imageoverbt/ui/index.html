@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f5f2"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232879ec'/%3E%3Cpath d='M8 16 23 7v18Z' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E"><title>imageoverbt — Off-grid image lab</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<svg class="icon-library" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7"/></symbol>
+<symbol id="i-crop" viewBox="0 0 24 24"><path d="M7 3v14h14M3 7h14v14"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></symbol>
+<symbol id="i-signal" viewBox="0 0 24 24"><path d="M5 17v3m5-7v7m5-12v12m5-17v17"/></symbol>
+<symbol id="i-mesh" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="18" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><path d="m7 11 9-5m-9 7 9 5m2-11v10"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8" cy="9" r="1.5"/><path d="m3 17 5-5 4 4 4-6 5 6"/></symbol>
+</defs></svg>
+<header class="app-header">
+  <a class="brand" href="/" aria-label="imageoverbt home"><span class="brand-mark"><svg><use href="#i-mesh"/></svg></span>imageoverbt<span class="brand-divider"></span><span class="lab-label">OFF-GRID LAB</span></a>
+  <div class="header-right"><span class="mock-label"><span></span>Interactive mock</span><button id="reset" class="quiet-button"><svg><use href="#i-reset"/></svg>Reset demo</button></div>
+</header>
+<main>
+  <div class="workspace-heading"><div><span class="eyebrow">RECIPIENT-DIRECTED IMAGE DELIVERY</span><h1>Off-grid image delivery</h1></div><div class="walkthrough"><span id="step-one" class="step current"><b>1</b>Send</span><i></i><span id="step-two" class="step"><b>2</b>Select</span><i></i><span id="step-three" class="step"><b>3</b>Sharpen</span></div></div>
+  <div class="workspace">
+    <section class="phone-column sender-column" aria-label="User 1 sender phone">
+      <div class="column-label"><span><span class="role-dot"></span>USER 1 <strong>Sender</strong></span><span class="node-label">NODE A</span></div>
+      <div class="phone"><div class="phone-edge"></div><div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><div class="island"></div><span class="device-status">▮▮▮ <span class="wifi">⌁</span><span class="battery"></span></span></div>
+        <div class="chat-header"><svg class="back"><use href="#i-back"/></svg><div class="avatar">S</div><div><strong>Sam</strong><span><i></i>Off-grid · Radio connected</span></div><span class="chat-more">···</span></div>
+        <div class="chat-content"><div class="chat-date">TODAY 9:41 AM</div><div class="chat-message incoming-message">Made it to the junction?</div>
+          <div class="photo-bubble sent-bubble"><div class="source-photo"><img src="/api/source.jpg" alt="The original photograph of the Oak Flat Loop trail sign"><span class="image-badge">Original</span></div><p>Found it. Which way do we go?</p><div class="message-time">9:41 <span id="sender-ticks">✓</span></div></div>
+          <div class="transfer-note" id="sender-note"><span class="note-icon"><svg><use href="#i-photo"/></svg></span><div><strong id="sender-status">Photo ready to send</strong><span id="sender-detail">Original stays on this phone.</span></div><span id="sender-note-dot" class="note-dot"></span></div>
+          <div class="local-reply" id="local-reply" hidden><span class="avatar tiny">S</span><div>Just the sign, please.<span>Detail request received</span></div></div>
+        </div>
+        <div class="sender-action"><button id="send-photo" class="primary-button"><svg><use href="#i-arrow"/></svg>Send photo</button><span>No cellular. No Wi-Fi. Just the mesh.</span></div>
+        <div class="composer"><button class="composer-plus" aria-label="Image-only demo" disabled><svg><use href="#i-plus"/></svg></button><span>Message via mesh</span><span class="composer-send"><svg><use href="#i-arrow"/></svg></span></div><div class="home-indicator"></div>
+      </div></div>
+      <div class="phone-footnote"><span class="person-avatar">A</span><span>Alex <span>at the trail junction</span></span></div>
+    </section>
+
+    <section class="network-column" aria-label="Mesh network simulation">
+      <div class="network-heading"><div><h2>Mesh network simulator</h2><p id="network-subtitle">A small preview goes first. You choose what follows.</p></div><button id="connection" class="network-pill" aria-pressed="true"><i></i><span>Network online</span></button></div>
+      <div class="map-shell">
+        <div class="map-topline"><span><svg><use href="#i-mesh"/></svg>TRAIL NETWORK</span><span class="map-scale">5 NODES · SIMULATED</span></div>
+        <svg id="mesh-map" viewBox="0 0 600 390" aria-label="Five-node mesh. A is sender, B C E are relays, D is recipient.">
+          <defs><pattern id="dots" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="#8da098" opacity=".16"/></pattern><filter id="packet-glow"><feGaussianBlur stdDeviation="3"/></filter><radialGradient id="hill"><stop stop-color="#d7e0ce" stop-opacity=".5"/><stop offset="1" stop-color="#eaf0e4" stop-opacity="0"/></radialGradient></defs>
+          <rect width="600" height="390" fill="#edf0e8"/><rect width="600" height="390" fill="url(#dots)"/>
+          <path d="M456-25Q445 46 502 68T628 155L635-35Z" fill="#d4e4e8"/><path d="M465-20Q455 44 510 58T623 141" stroke="#bfd5dc" fill="none"/>
+          <ellipse cx="200" cy="200" rx="260" ry="220" fill="url(#hill)"/>
+          <g class="contours" fill="none" stroke="#c8d1c2" stroke-width=".8" opacity=".65">
+            <path d="M-80 260C70 207-15 30 153-16S296 86 380 52 446-49 497-20"/><path d="M-55 284C86 223 6 47 151 7S294 110 386 73 454-15 513-1"/><path d="M-20 297C107 249 33 62 157 31S290 132 398 95 473 10 533 24"/><path d="M-15 321C127 263 56 85 164 58S284 151 405 116 488 36 551 49"/><path d="M8 346C151 278 77 108 172 85S276 176 415 142 503 60 579 74"/>
+            <path d="M77 392C234 284 157 195 271 188S327 274 415 255 472 190 638 225"/><path d="M103 407C253 304 188 220 279 213S335 300 431 279 489 218 625 250"/><path d="M148 410C271 332 217 244 288 239S346 326 441 305 507 245 624 276"/><path d="M181 428C298 345 239 271 303 266S359 352 456 334 528 274 630 305"/>
+            <path d="M-10 75Q50 110 51 156T110 242 94 383"/><path d="M-15 100Q29 122 28 169T86 249 66 393"/>
+          </g>
+          <path d="M-5 355Q100 286 156 318T280 202 377 177 450 205 605 321" stroke="#c8bfa8" stroke-width="2" stroke-dasharray="3 5" opacity=".75" fill="none"/>
+          <g class="map-place"><text x="44" y="82">OAK FLAT TRAIL</text><text x="394" y="350">SOUTH RIM</text><text x="493" y="36" transform="rotate(23 493 36)">RESERVOIR</text></g>
+          <g id="mesh-links"></g><g id="mesh-packets"></g><g id="mesh-nodes"></g>
+        </svg>
+        <div class="map-bottomline"><span id="route-label">A → B → C → D</span><span><i class="legend-line"></i>Active route <i class="legend-dash"></i>Alternate</span></div>
+        <div id="map-state" class="map-state" hidden><strong>Waiting for a route</strong><span>Received progress is saved.</span></div>
+      </div>
+      <div class="network-metrics"><div class="progress-metric"><span id="progress-label">Ready to send</span><strong id="packet-count">0 <small>/ 0 packets</small></strong><div class="progress-track"><i id="progress-fill"></i></div></div><div><span>Packet loss</span><strong id="loss-metric">20<small>%</small></strong></div><div><span>Route</span><strong id="hop-metric">3 <small>hops</small></strong></div><div><span>Retried</span><strong id="retry-metric">0 <small>packets</small></strong></div></div>
+      <div class="network-controls"><label class="loss-control">Loss <input id="loss" aria-label="Packet loss percentage" type="range" min="0" max="40" step="5" value="20"><span id="loss-value">20%</span></label><div><button id="relay-toggle" class="control-button" aria-pressed="false">Take B offline</button><button id="pause" class="icon-button" aria-label="Pause simulation"><svg><use href="#i-pause"/></svg></button><button id="speed" class="control-button" aria-label="Simulation speed">1×</button></div></div>
+      <div class="timeline"><div class="timeline-heading"><h3>Packet activity</h3><span id="activity-label"><i></i>Live view</span></div><ol id="events" aria-label="Recent network events"></ol><div class="timeline-empty" id="timeline-empty">Your photo’s journey will appear here.</div></div>
+      <div class="network-footer"><span id="protocol-label">Loading media pipeline…</span><span>Accelerated visual simulation</span></div>
+    </section>
+
+    <section class="phone-column receiver-column" aria-label="User 2 recipient phone">
+      <div class="column-label"><span><span class="role-dot receiver-dot"></span>USER 2 <strong>Recipient</strong></span><span class="node-label">NODE D</span></div>
+      <div class="phone"><div class="phone-edge"></div><div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><div class="island"></div><span class="device-status">▮▮▮ <span class="wifi">⌁</span><span class="battery"></span></span></div>
+        <div class="chat-header"><svg class="back"><use href="#i-back"/></svg><div class="avatar alex-avatar">A</div><div><strong>Alex</strong><span><i></i>Off-grid · Radio connected</span></div><span class="chat-more">···</span></div>
+        <div class="chat-content recipient-content"><div class="chat-date">TODAY 9:41 AM</div>
+          <div class="request-toolbar"><span id="selection-label"><svg><use href="#i-crop"/></svg>Select a section</span><button id="request-section" disabled>Request section <svg><use href="#i-arrow"/></svg></button></div>
+          <div class="photo-bubble received-bubble"><div id="recipient-photo" class="recipient-photo"><div id="image-placeholder" class="image-placeholder"><svg><use href="#i-photo"/></svg><strong>Waiting for Alex’s photo</strong><span>The preview comes first.</span></div><img id="preview-image" alt="Low-resolution preview of the trail sign" hidden><div id="detail-tiles"></div><div id="crop-box" class="crop-box" role="slider" tabindex="0" aria-label="Crop selection. Drag to move; drag a corner to resize. Arrow keys move; Shift and arrows resize." aria-valuemin="0" aria-valuemax="100" aria-valuenow="34" hidden><i data-handle="nw"></i><i data-handle="ne"></i><i data-handle="sw"></i><i data-handle="se"></i><span id="crop-box-label">SELECTED SECTION</span></div></div><div class="received-caption"><span id="receiver-image-status">Photo incoming</span><span>9:41</span></div><p>Found it. Which way do we go?</p></div>
+          <div class="detail-status" id="detail-status"><span class="detail-status-icon"><svg><use href="#i-crop"/></svg></span><div><strong id="receiver-status">Start with the preview</strong><span id="receiver-detail">Then choose the detail you need.</span></div></div>
+          <div class="selection-help" id="selection-help"><div class="selection-demo"><span></span></div><strong>A clearer view, one section at a time.</strong><p>Drag the box over the sign.<br>Request that section in high definition.</p></div>
+          <button id="another-section" class="another-section" hidden><svg><use href="#i-plus"/></svg>Choose another section</button>
+        </div>
+        <div class="composer"><button class="composer-plus" aria-label="Image-only demo" disabled><svg><use href="#i-plus"/></svg></button><span>Message via mesh</span><span class="composer-send"><svg><use href="#i-arrow"/></svg></span></div><div class="home-indicator"></div>
+      </div></div>
+      <div class="phone-footnote"><span class="person-avatar sam-avatar">S</span><span>Sam <span>a few ridgelines away</span></span></div>
+    </section>
+  </div>
+  <footer class="workspace-footer"><span><span class="privacy-dot"></span>Original pixels. Local processing. No generated detail.</span><span>Try it: send → drag a selection → request section</span></footer>
+</main>
+<div id="toast" class="toast" role="alert" hidden></div>
+<script type="module" src="/app.mjs"></script>
+</body></html>

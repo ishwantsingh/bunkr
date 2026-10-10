@@ -4,7 +4,20 @@
 
 imageoverbt is an image-only, off-grid messaging concept for the **CHRP Track — Off-Grid Everything**. It makes a photo useful before the whole image has crossed a slow, unreliable mesh network. The recipient chooses which detail should arrive next.
 
-**Status:** Concept and documentation only. The app, image pipeline, and mesh simulator are not implemented yet.
+**Status:** Phase 1 media handling is implemented on `codex/media-handling`: local source retention, JPEG/WebP encoding, requested crops, bounded wire packets, restart-safe reconstruction and verified completion acknowledgments. A local interactive UI mock is available. The full firmware-backed mesh simulator and production app integration remain planned.
+
+Run `python3 -m unittest discover -s tests -v` and `python3 -m imageoverbt.demo` after installing with `python3 -m pip install -e .`. The offline demo writes a real trail-sign comparison and measured codec results to `demo-output/`. See [the media contract and setup instructions](docs/MEDIA_CONTRACT.md).
+
+Meshtastic interoperability uses the official [Python SDK](https://github.com/meshtastic/python) and generated [protobuf definitions](https://github.com/meshtastic/protobufs). Install `python3 -m pip install -e ".[meshtastic]"` and run `python3 -m imageoverbt.meshtastic_transport` for an offline protocol check. Frames are capped at 220 bytes to leave room for the Meshtastic wrapper and encryption overhead. See [upstream integration and simulator handoff](docs/MESHTASTIC.md).
+
+## Try the interactive mock
+
+Run `python3 -m imageoverbt.ui_server` after installation and open
+[localhost:8765](http://127.0.0.1:8765). Two phone chats surround an animated
+five-node mesh. Drag the recipient’s crop box and click **Request section** to
+watch verified source detail arrive progressively. Loss, relay removal,
+disconnection, pause, reset and another-section requests are interactive.
+See [UI_MOCK.md](docs/UI_MOCK.md) for setup, controls and simulation limits.
 
 ## The use case
 
@@ -84,7 +97,7 @@ Show the sender, recipient, and five-node mesh together. Configure a three-hop p
 
 Compare recipient-directed delivery with sequential full-image delivery using the same source photos, codec settings, radio model, and reproducible loss scenarios. Report time to preview, time from selection to readable detail, total transmitted bytes and airtime including control traffic and retries, and completion rate for requested representations. Include request round-trip time in the comparison.
 
-Planned automated checks cover packet-size limits, exact reconstruction of encoded bytes, missing-chunk recovery, duplicate handling, request prioritization, interrupted transfers, and acknowledgment-driven status changes. No implementation tests exist yet.
+Implemented media tests cover packet-size limits, exact reconstruction, corruption, duplicate/reordered chunks, persistent recovery, repeated/overlapping requests, all eight EXIF orientations, cache reuse and completion acknowledgments. Mesh priority/recovery and app state tests remain part of Phases 2 and 3.
 
 ## Scope
 

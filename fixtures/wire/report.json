@@ -1,0 +1,103 @@
+{
+  "source_image_id": "d79daf4b6bc2e660ddf269c0734f6adb",
+  "packet_cap": 220,
+  "seed": 42,
+  "representations": [
+    {
+      "image_id": "d79daf4b6bc2e660ddf269c0734f6adb",
+      "representation_id": "a08efad444dac6ac8f446256bf5786d9",
+      "sender": 1,
+      "recipient": 2,
+      "kind": 0,
+      "codec": 1,
+      "width": 54,
+      "height": 36,
+      "byte_count": 298,
+      "chunk_count": 2,
+      "sha256": "7b4096c7606e56d2ed0f43527bd85864127e2f015d5f487ca35ee9d105155cbb",
+      "request_id": "00000000000000000000000000000000",
+      "bounds": {
+        "left": 0,
+        "top": 0,
+        "right": 65535,
+        "bottom": 65535
+      },
+      "source_width": 5184,
+      "source_height": 3456,
+      "name": "preview",
+      "serialized_data_bytes": 390,
+      "max_packet_bytes": 220,
+      "resumed_missing_chunks": 1,
+      "missing_request_bytes": 26
+    },
+    {
+      "image_id": "d79daf4b6bc2e660ddf269c0734f6adb",
+      "representation_id": "b2fb6a0926e97223fc21efe97a15508b",
+      "sender": 1,
+      "recipient": 2,
+      "kind": 1,
+      "codec": 1,
+      "width": 1024,
+      "height": 352,
+      "byte_count": 41854,
+      "chunk_count": 241,
+      "sha256": "34a9c7f4f643ce9b89eaadef9e899fc3a575aa239429036e3aefcd4de4536e86",
+      "request_id": "10101010101010101010101010101010",
+      "bounds": {
+        "left": 11796,
+        "top": 16384,
+        "right": 55049,
+        "bottom": 38666
+      },
+      "source_width": 5184,
+      "source_height": 3456,
+      "name": "crop",
+      "serialized_data_bytes": 52940,
+      "max_packet_bytes": 220,
+      "resumed_missing_chunks": 121,
+      "missing_request_bytes": 550
+    }
+  ],
+  "codec_comparison": [
+    {
+      "kind": "preview",
+      "codec": "JPEG",
+      "bytes": 299,
+      "width": 12,
+      "height": 8,
+      "quality": 10,
+      "budget": 300,
+      "max_dimension": 96
+    },
+    {
+      "kind": "preview",
+      "codec": "WEBP",
+      "bytes": 298,
+      "width": 54,
+      "height": 36,
+      "quality": 10,
+      "budget": 300,
+      "max_dimension": 96
+    },
+    {
+      "kind": "crop",
+      "codec": "JPEG",
+      "bytes": 46176,
+      "width": 1024,
+      "height": 352,
+      "quality": 55,
+      "budget": 48000,
+      "max_dimension": 1024
+    },
+    {
+      "kind": "crop",
+      "codec": "WEBP",
+      "bytes": 41854,
+      "width": 1024,
+      "height": 352,
+      "quality": 70,
+      "budget": 48000,
+      "max_dimension": 1024
+    }
+  ]
+}
